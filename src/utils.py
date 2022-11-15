@@ -20,10 +20,11 @@ def filter_df(DF,filter_list):
 
     return filtered_df
 
-def format_data(df_features, df_labels, filter_list):
+def format_data(df_features, df_labels, filter_list=None):
     
     df=concat_df(df_features,df_labels)
-    df=filter_df(df,filter_list)
+    if not filter_list==None:
+        df=filter_df(df,filter_list)
 
     return df 
 

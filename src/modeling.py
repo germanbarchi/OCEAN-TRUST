@@ -348,3 +348,58 @@ def predict(RF_reg, val,feature_tags,label_tags):
     return r2,MAE,MSE,RMSE,Y_val
 
 
+def make_folds(df,n_folds=5):
+    
+    df_final=pd.DataFrame()
+    folds=[]
+   
+    for i in df.index:
+        df.loc[i,'basename']=df.loc[i,'Name'].split('.')[0]
+    
+    folds_len=int(len(df.basename.unique())/5)
+    unique=df.basename.unique()
+    
+    for i in range(n_folds):
+        fold=np.random.choice(unique,size=folds_len,replace=False)
+        folds.append(fold)
+        unique =[j for j in unique if not j in fold]
+        df_=df[df['basename'].isin(fold)].copy()
+        df_.loc[:,'fold']=int(i+1)
+        df_final=pd.concat([df_final,df_])
+    if not len(unique)==0:
+        df_rest=df[df['basename'].isin(unique)].copy()
+        df_rest.loc[:,'fold']=5
+        df_final=pd.concat([df_final,df_rest])
+    return df_final
+
+def cross_val(df,feature_tags,label_tags,n_folds=5):
+    feature_importance=[]
+    metrics_list=[]
+    
+    df_final=make_folds(df,n_folds)
+
+    for fold in range(n_folds):
+        df_val=df_final[df_final['fold']==fold+1]
+        df_train=df_final[~df_final['basename'].isin(df_val.basename)]
+        RF_reg= train_model (df_train,feature_tags,label_tags,42)
+                
+        r2_all,MAE_all,MSE_all,RMSE_all,y_val= predict(RF_reg,df_val,feature_tags,label_tags)
+        metrics=[r2_all,np.sqrt(r2_all),MAE_all,MSE_all,RMSE_all,fold]
+        metrics_list.append(metrics)
+
+        feature_importance.append(RF_reg.feature_importances_)
+
+    metrics_list=np.transpose(metrics_list)
+    df_fold=pd.DataFrame({'r2':metrics_list[0],'r':metrics_list[1],'MAE':metrics_list[2],'MSE':metrics_list[3],'RMSE':metrics_list[4],'fold':metrics_list[5]})
+    return df_fold,feature_importance,y_val
+
+def create_importance_df(importance_data,data_type,feature_tags):
+    
+    df_importance=pd.DataFrame()
+    for i in range(len(importance_data)):
+        percentil_95=np.percentile(importance_data[i],95)
+        values=importance_data[i][importance_data[i]>percentil_95]
+        values_indexes=np.asarray(importance_data[i]>percentil_95).nonzero()
+        importance_df=pd.DataFrame({'features':feature_tags[values_indexes],'value':values,'fold':i,'data_type':data_type})
+        df_importance=pd.concat([df_importance,importance_df])
+    return df_importance

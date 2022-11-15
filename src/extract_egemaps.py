@@ -29,9 +29,10 @@ def concat(df,new_row):
 
     return df_functionals
 
-def extract_features(features_path,file_paths):
+def extract_features(features_path,file_paths,duration=0):
 
     FS=16000
+    n_samples=int(duration*FS)
     df=pd.DataFrame()    
          
     for file in tqdm.tqdm(file_paths):   
@@ -40,7 +41,10 @@ def extract_features(features_path,file_paths):
                 
         signal=librosa.core.load(file,sr=FS)[0]
 
-        functionals=smile(signal,FS)
+        if not duration==0:            
+            functionals=smile(signal[:n_samples],FS)
+        else:
+            functionals=smile(signal,FS)
             
         functionals['Part']=partition
         functionals['Name']=file_tag
