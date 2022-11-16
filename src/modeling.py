@@ -345,7 +345,7 @@ def predict(RF_reg, val,feature_tags,label_tags):
     MSE=mean_squared_error(Y_val, predictions)
     RMSE=np.sqrt(mean_squared_error(Y_val, predictions))
 
-    return r2,MAE,MSE,RMSE,Y_val
+    return r2,MAE,MSE,RMSE,Y_val,predictions
 
 
 def make_folds(df,n_folds=5):
@@ -375,7 +375,8 @@ def make_folds(df,n_folds=5):
 def cross_val(df,feature_tags,label_tags,n_folds=5):
     feature_importance=[]
     metrics_list=[]
-    
+    predictions_all=np.array([], dtype=np.int64).reshape(0,5)
+    y_val_all=pd.DataFrame()
     df_final=make_folds(df,n_folds)
 
     for fold in range(n_folds):
@@ -383,14 +384,19 @@ def cross_val(df,feature_tags,label_tags,n_folds=5):
         df_train=df_final[~df_final['basename'].isin(df_val.basename)]
         RF_reg= train_model (df_train,feature_tags,label_tags,42)
                 
-        r2_all,MAE_all,MSE_all,RMSE_all,y_val= predict(RF_reg,df_val,feature_tags,label_tags)
+        r2_all,MAE_all,MSE_all,RMSE_all,y_val,predictions= predict(RF_reg,df_val,feature_tags,label_tags)
         metrics=[r2_all,np.sqrt(r2_all),MAE_all,MSE_all,RMSE_all,fold]
         metrics_list.append(metrics)
+        
+        predictions_all=np.concatenate((predictions_all,predictions),axis=0)
+        y_val_all=pd.concat([y_val_all,y_val])
 
         feature_importance.append(RF_reg.feature_importances_)
-
+    
+    r2_fold=r2_score(y_val_all, predictions_all)  
+    
     metrics_list=np.transpose(metrics_list)
-    df_fold=pd.DataFrame({'r2':metrics_list[0],'r':metrics_list[1],'MAE':metrics_list[2],'MSE':metrics_list[3],'RMSE':metrics_list[4],'fold':metrics_list[5]})
+    df_fold=pd.DataFrame({'r2':metrics_list[0],'r':metrics_list[1],'MAE':metrics_list[2],'MSE':metrics_list[3],'RMSE':metrics_list[4],'fold':metrics_list[5],'r2_fold':r2_fold})
     return df_fold,feature_importance,y_val
 
 def create_importance_df(importance_data,data_type,feature_tags):
