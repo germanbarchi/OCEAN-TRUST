@@ -14,6 +14,8 @@ from sklearn.utils import resample
 from joblib import Parallel, delayed
 from IPython import embed
 
+from utils import make_partitions
+
 def cross_val_5_folds(df,n_train,n_val,feature_tags,label_tags,seed):
     
     metrics_list=[] 
@@ -348,36 +350,23 @@ def predict(RF_reg, val,feature_tags,label_tags):
     return r2,MAE,MSE,RMSE,Y_val,predictions
 
 
-def make_folds(df,n_folds=5):
+def cross_val(df,feature_tags,label_tags,n_folds=5,stratify=False):
     
-    df_final=pd.DataFrame()
-    folds=[]
-   
-    for i in df.index:
-        df.loc[i,'basename']=df.loc[i,'Name'].split('.')[0]
-    
-    folds_len=int(len(df.basename.unique())/5)
-    unique=df.basename.unique()
-    
-    for i in range(n_folds):
-        fold=np.random.choice(unique,size=folds_len,replace=False)
-        folds.append(fold)
-        unique =[j for j in unique if not j in fold]
-        df_=df[df['basename'].isin(fold)].copy()
-        df_.loc[:,'fold']=int(i+1)
-        df_final=pd.concat([df_final,df_])
-    if not len(unique)==0:
-        df_rest=df[df['basename'].isin(unique)].copy()
-        df_rest.loc[:,'fold']=5
-        df_final=pd.concat([df_final,df_rest])
-    return df_final
+    partition=make_partitions(n_folds)
 
-def cross_val(df,feature_tags,label_tags,n_folds=5):
     feature_importance=[]
     metrics_list=[]
     predictions_all=np.array([], dtype=np.int64).reshape(0,5)
     y_val_all=pd.DataFrame()
-    df_final=make_folds(df,n_folds)
+    
+    # Partitioning options
+
+    if stratify:
+        df_final=partition.make_strat_folds(df,n_folds)
+    else:
+        df_final=partition.make_folds_by_id(df,n_folds)
+
+    # Run cross Val
 
     for fold in range(n_folds):
         df_val=df_final[df_final['fold']==fold+1]

@@ -29,7 +29,13 @@ def concat(df,new_row):
 
     return df_functionals
 
-def extract_features(features_path,file_paths,duration=0):
+def min_max_normalization(y):
+
+    normalized=(y-y.min())/(y.max()-y.min())
+
+    return normalized
+
+def extract_features(features_path,file_paths,duration=0,normalize=False):
 
     FS=16000
     n_samples=int(duration*FS)
@@ -40,7 +46,10 @@ def extract_features(features_path,file_paths,duration=0):
         file_tag, partition=return_names(file)
                 
         signal=librosa.core.load(file,sr=FS)[0]
-
+        
+        if normalize:
+            signal=min_max_normalization(signal)
+        
         if not duration==0:            
             functionals=smile(signal[:n_samples],FS)
         else:
