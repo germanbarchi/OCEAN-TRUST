@@ -12,10 +12,11 @@ sys.path.append('./configs')
 def main (exp_dict):
 
     for experiment,method in zip (exp_dict.keys(),exp_dict.values()):
-        
+        print(experiment)
+        print(method)
         configs=importlib.import_module(experiment)
 
-        exp=experiments(configs.feature_tags,configs.label_tags,n_folds=5,iterations=configs.iterations,stratify=configs.stratify,rf_n_jobs=configs.rf_n_jobs,n_jobs=configs.n_jobs) #agregar stratify=stratify
+        exp=experiments(configs.feature_tags,configs.label_tags,n_folds=5,iterations=configs.iterations,stratify=configs.stratify,rf_n_jobs=configs.rf_n_jobs,n_jobs=configs.n_jobs) 
         
         dfs=[]
 

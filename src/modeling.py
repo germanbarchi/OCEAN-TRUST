@@ -220,7 +220,7 @@ def bootstrap_parallel_music_analysis_replacement_split_train_var(df,iterations,
 
     return df
 
-def cross_val(df,iterations,n_train,n_val,feature_tags,label_tags,seed,n_jobs=1,rf_n_jobs=None):  
+def cross_val_(df,iterations,n_train,n_val,feature_tags,label_tags,seed,n_jobs=1,rf_n_jobs=None):  
 
     def func(i):   
         metrics_list=[]
@@ -365,8 +365,6 @@ class experiments:
     
     def cross_val(self,df): 
         
-        df_=pd.DataFrame()
-
         def func(i):
             partition=make_partitions(self.n_folds)
 
@@ -378,14 +376,14 @@ class experiments:
             # Partitioning options
 
             if self.stratify: 
-                df_final=partition.make_strat_folds(df)
+                df_final=partition.make_strat_folds(df) #se puede agregar random_seed
             else:
                 df_final=partition.make_folds_by_id(df)
 
             # Run cross Val
 
             for fold in range(self.n_folds):
-                df_val=df_final[df_final['fold']==fold+1]
+                df_val=df_final[df_final['fold']==float(fold)]
                 df_train=df_final[~df_final['basename'].isin(df_val.basename)]
                 RF_reg= train_model (df_train,self.feature_tags,self.label_tags,42,rf_n_jobs=self.rf_n_jobs)
                         
@@ -407,7 +405,7 @@ class experiments:
 
         metrics_=Parallel(n_jobs=self.n_jobs)(delayed(func)(i) for i in tqdm.tqdm(range(self.iterations)))
         df_=pd.concat(metrics_)
-        
+
         return df_
 
 def create_importance_df(importance_data,data_type,feature_tags):
