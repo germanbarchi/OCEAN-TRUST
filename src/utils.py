@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np 
 import tqdm
+from IPython import embed
 
 def concat_df(DF_features,DF_labels):
 
@@ -90,7 +91,7 @@ class make_partitions:
         
         return df_out
 
-    def make_strat_folds(n_seeds,df):
+    def make_strat_folds(self,df):
         
         def make_folds(df,partitions,
                     stratify_columns,
@@ -136,20 +137,16 @@ class make_partitions:
             return partidx
 
         df_=pd.DataFrame()
-        
-        for i in range(n_seeds):
-            
-            df=df.sample(frac=1)
-            
-            nquant = 4
-            boundaries = df['labels_mean'].quantile(np.linspace(0,1,nquant))
-            df['labels_mean_quant'] = np.searchsorted(boundaries, df['labels_mean'])
+                   
+        df=df.sample(frac=1)
+        nquant = 4
+        boundaries = df['labels_mean'].quantile(np.linspace(0,1,nquant))
+        df['labels_mean_quant'] = np.searchsorted(boundaries, df['labels_mean'])
 
-            pix = make_folds(df,5, ['ethnicity','gender','music','labels_mean_quant'], independent_columns='basename')
+        pix = make_folds(df,self.n_folds, ['ethnicity','gender','music','labels_mean_quant'], independent_columns='basename')
 
-            for k,v in pix.items():
-                df.loc[v,'partition'] = int(k)
-                df.loc[v,'group'] = int(i)
-            df_=df_.append(df)
+        for k,v in pix.items():
+            df.loc[v,'partition'] = int(k)
+        df_=df_.append(df)
         
         return df_

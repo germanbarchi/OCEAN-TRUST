@@ -1,43 +1,52 @@
-from numpy import extract
+import os,sys,tqdm,json,importlib
+from pathlib import Path
+#from IPython import embed
+import pandas as pd
+
 from src.utils import format_data
 from src.utils import normalize_data
-from src.modeling import bootstrap_parallel_no_partitions_learning_curve,cross_val_speech_vs_no_speech_subset,cross_val, bootstrap, bootstrap_parallel, bootstrap_parallel_music_analysis, bootstrap_parallel_music_analysis_replacement, bootstrap_parallel_no_music_analysis, bootstrap_parallel_no_partitions,bootstrap_parallel_music_analysis_replacement, bootstrap_parallel_music_analysis_replacement_split_train_var
-from configs.bootstrap_parallel_no_partitions_learning_curve import label_tags,feature_tags,seed,features_and_filters,labels_df, results_path, iterations#, n_train, n_val
-import os
-import tqdm
-from pathlib import Path
-from IPython import embed
-import pandas as pd 
+from src.modeling import experiments
 
-def main ():
+sys.path.append('./configs')
 
-    dfs=[]
+def main (exp_dict):
 
-    for i, (feat,filter) in tqdm.tqdm(enumerate(features_and_filters)):
+    for experiment,method in zip (exp_dict.keys(),exp_dict.values()):
         
-        feat_df=pd.read_csv(feat)        
-      
-        df=format_data(feat_df,labels_df,filter)
+        configs=importlib.import_module(experiment)
 
-        #df=normalize_data(df,feature_tags)
+        exp=experiments(configs.feature_tags,configs.label_tags,n_folds=5,iterations=configs.iterations,stratify=configs.stratify,rf_n_jobs=configs.rf_n_jobs,n_jobs=configs.n_jobs) #agregar stratify=stratify
+        
+        dfs=[]
 
-        df=bootstrap_parallel_no_partitions_learning_curve(df,iterations,feature_tags,label_tags,seed)
+        for i, (feat,filter) in tqdm.tqdm(enumerate(configs.features_and_filters)):
+            
+            feat_df=pd.read_csv(feat)        
         
-        features_name=Path(feat).stem
-        filter_name=Path(filter).stem
-        
-        df['filter']=filter_name
-        df['feature']=features_name
-        dfs.append(df)
-    
-        df=pd.concat(dfs).reset_index(drop=True)    
-        
-        if not os.path.exists(results_path):
-            os.makedirs(results_path)
+            df=format_data(feat_df,configs.labels_df,filter)
 
-        df.to_csv(os.path.join(results_path,'results_speech.csv'))
+            #df=normalize_data(df,feature_tags)
+
+            df=exp.__getattribute__(method)(df)
+            
+            features_name=Path(feat).stem
+            filter_name=Path(filter).stem
+            
+            df['filter']=filter_name
+            df['feature']=features_name
+            dfs.append(df)
+        
+            df=pd.concat(dfs).reset_index(drop=True)    
+            
+            if not os.path.exists(configs.results_path):
+                os.makedirs(configs.results_path)
+
+            df.to_csv(os.path.join(configs.results_path,'results.csv'))
             
 if __name__=='__main__':
 
-    main()
+    with open ('individual_experiment.JSON') as jsonfile:
+        experiment_dict=json.load(jsonfile)
+
+    main(experiment_dict)
 
