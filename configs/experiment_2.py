@@ -1,5 +1,9 @@
 """
-Experiment description
+Cross-val 
+Stratified
+Iterations 100
+Features: egemaps+duration 
+
 """
 from itertools import product
 import glob 

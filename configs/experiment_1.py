@@ -1,5 +1,8 @@
 """
-Experiment description
+Cross-val 
+Folds by ID
+Iterations 100
+Features: egemaps
 """
 from itertools import product
 import glob 
