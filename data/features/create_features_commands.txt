@@ -1,0 +1,1 @@
+python extract_egemaps.py ../data/features/egemaps_normalized_ns.csv --files_path /home/gbarchi/Documentos/Trust/OCEAN-TRUST/data/silero/silero_no_speech --normalize True
