@@ -26,6 +26,8 @@ def filter_df(DF,filter_list):
 
 def format_data(df_features, df_labels, filter_list=None):
     
+    df_features=df_features.fillna(0)
+    
     df=concat_df(df_features,df_labels)
     if not filter_list==None:
         df=filter_df(df,filter_list)
