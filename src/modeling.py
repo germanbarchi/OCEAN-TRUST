@@ -353,7 +353,6 @@ def predict(RF_reg, val,feature_tags,label_tags):
 
 class experiments:
 
-
     def __init__(self,feature_tags,label_tags,n_folds=5,iterations=10,stratify=False,n_jobs=1,rf_n_jobs=1):
         self.feature_tags=feature_tags
         self.label_tags=label_tags
@@ -402,11 +401,65 @@ class experiments:
             df_fold=pd.DataFrame({'r2':metrics_list[0],'r':metrics_list[1],'MAE':metrics_list[2],'MSE':metrics_list[3],'RMSE':metrics_list[4],'fold':metrics_list[5],'r2_fold':r2_fold})
             
             return df_fold
-
+        
         metrics_=Parallel(n_jobs=self.n_jobs)(delayed(func)(i) for i in tqdm.tqdm(range(self.iterations)))
         df_=pd.concat(metrics_)
 
         return df_
+
+    def learning_curve(self,df):
+
+        dfs=[]
+        n_samples=np.arange(1,11)*0.1
+        
+        def func(i):
+            partition=make_partitions(self.n_folds)
+
+            feature_importance=[]
+            metrics_list=[]
+            predictions_all=np.array([], dtype=np.int64).reshape(0,5)
+            y_val_all=pd.DataFrame()
+            
+            # Partitioning options
+
+            if self.stratify: 
+                df_final=partition.make_strat_folds(df) #se puede agregar random_seed
+            else:
+                df_final=partition.make_folds_by_id(df)
+
+            # Run cross Val
+
+            for fold in range(self.n_folds):
+                df_val=df_final[df_final['fold']==float(fold)]
+                df_train=df_final[~df_final['basename'].isin(df_val.basename)]
+                RF_reg= train_model (df_train,self.feature_tags,self.label_tags,42,rf_n_jobs=self.rf_n_jobs)
+                        
+                r2_all,MAE_all,MSE_all,RMSE_all,y_val,predictions= predict(RF_reg,df_val,self.feature_tags,self.label_tags)
+                metrics=[r2_all,np.sqrt(r2_all),MAE_all,MSE_all,RMSE_all,fold]
+                metrics_list.append(metrics)
+                
+                predictions_all=np.concatenate((predictions_all,predictions),axis=0)
+                y_val_all=pd.concat([y_val_all,y_val])
+
+                feature_importance.append(RF_reg.feature_importances_)
+            
+            r2_fold=r2_score(y_val_all, predictions_all)  
+
+            metrics_list=np.transpose(metrics_list)
+            df_fold=pd.DataFrame({'r2':metrics_list[0],'r':metrics_list[1],'MAE':metrics_list[2],'MSE':metrics_list[3],'RMSE':metrics_list[4],'fold':metrics_list[5],'r2_fold':r2_fold})
+            
+            return df_fold
+        
+        for step in n_samples:
+            metrics_=Parallel(n_jobs=self.n_jobs)(delayed(func)(i) for i in tqdm.tqdm(range(self.iterations)))
+            df_=pd.concat(metrics_)
+            df_.loc[:,'%_samples']=step
+        
+            dfs.append(df_)
+
+        final_df=pd.concat(dfs).reset_index(drop=True)  
+        
+        return final_df
 
 def create_importance_df(importance_data,data_type,feature_tags):
     
