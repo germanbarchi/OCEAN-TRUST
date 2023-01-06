@@ -2,7 +2,7 @@
 Cross-val 
 Stratified
 Iterations 100
-Features: egemaps+duration 
+Features: egemaps 
 
 """
 from itertools import product

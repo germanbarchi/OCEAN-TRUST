@@ -2,7 +2,7 @@
 Cross-val 
 Iterations 100
 Stratified
-Features: egemaps+spech_ratio
+Features: egemaps+speech_ratio
 
 """
 from itertools import product
@@ -40,15 +40,15 @@ speech_ratio=True
 
 if speech_ratio:
     feature_df=pd.merge(feature_df,labels_df[['filename','speech_ratio']],left_on='Name',right_on='filename').drop(columns='filename')
-    
+
 feature_tags=feature_df.columns[~feature_df.columns.isin(['Name','Part'])]
 
 # Subset Lists
 
 lists_path='data/lists'
 lists_=['all_audio_complete_set.txt',
-    'yamnet_music_0.1.txt',
-    'yamnet_no_music_0.1.txt']
+    'music_list_manual_annot.txt',
+    'no_music_list_manual_annot.txt']
 
 lists=[os.path.join(lists_path,j) for j in lists_]
 

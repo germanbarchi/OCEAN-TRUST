@@ -2,7 +2,7 @@
 Cross-val 
 Iterations 100
 Stratified
-Features: egemaps+spech_ratio
+Features: egemaps+speech_ratio (normalized audio)
 
 """
 from itertools import product
@@ -26,29 +26,27 @@ label_tags=['extraversion', 'neuroticism','agreeableness', 'conscientiousness', 
 # Features
 
 data_path = 'data/features'
-feature_list=['new_partitions-egemaps_all_audio.csv',
-        'new_partitions-egemaps_silero_no_speech.csv',
-        'new_partitions-egemaps_silero_speech.csv']
+feature_list=['egemaps_all_audios_normalized.csv',
+        'egemaps_normalized_ns.csv',
+        'egemaps_normalized_s.csv']
 
 features=[os.path.join(data_path,i) for i in feature_list]
 
 feature_df=pd.read_csv(features[0])
 
-# Add speech ratio as feature
-
 speech_ratio=True
 
 if speech_ratio:
     feature_df=pd.merge(feature_df,labels_df[['filename','speech_ratio']],left_on='Name',right_on='filename').drop(columns='filename')
-    
+
 feature_tags=feature_df.columns[~feature_df.columns.isin(['Name','Part'])]
 
 # Subset Lists
 
 lists_path='data/lists'
 lists_=['all_audio_complete_set.txt',
-    'yamnet_music_0.1.txt',
-    'yamnet_no_music_0.1.txt']
+    'music_list_manual_annot.txt',
+    'no_music_list_manual_annot.txt']
 
 lists=[os.path.join(lists_path,j) for j in lists_]
 
