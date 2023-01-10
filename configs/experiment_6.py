@@ -26,7 +26,7 @@ label_tags=['extraversion', 'neuroticism','agreeableness', 'conscientiousness', 
 # Features
 
 data_path = 'data/features'
-feature_list=['data/features/new_partitions-egemaps_all_audio.csv']
+feature_list=['new_partitions-egemaps_all_audio.csv']
 
 features=[os.path.join(data_path,i) for i in feature_list]
 

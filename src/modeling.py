@@ -414,18 +414,22 @@ class experiments:
         
         def func(i):
             partition=make_partitions(self.n_folds)
-
+            
             feature_importance=[]
             metrics_list=[]
             predictions_all=np.array([], dtype=np.int64).reshape(0,5)
             y_val_all=pd.DataFrame()
             
+            # Sample dataframe subsets of size 10% to 100%
+
+            df_subset=df.sample(frac=step)
+
             # Partitioning options
 
             if self.stratify: 
-                df_final=partition.make_strat_folds(df) #se puede agregar random_seed
+                df_final=partition.make_strat_folds(df_subset) #se puede agregar random_seed
             else:
-                df_final=partition.make_folds_by_id(df)
+                df_final=partition.make_folds_by_id(df_subset)
 
             # Run cross Val
 

@@ -46,7 +46,7 @@ def main (exp_dict):
             
 if __name__=='__main__':
 
-    with open ('experiments.JSON') as jsonfile:
+    with open ('individual_experiment.JSON') as jsonfile:
         experiment_dict=json.load(jsonfile)
 
     main(experiment_dict)
