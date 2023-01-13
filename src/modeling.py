@@ -353,7 +353,7 @@ def predict(RF_reg, val,feature_tags,label_tags):
 
 class experiments:
 
-    def __init__(self,feature_tags,label_tags,n_folds=5,iterations=10,stratify=False,n_jobs=1,rf_n_jobs=1,n_samples=1,seed=None):
+    def __init__(self,feature_tags,label_tags,n_folds=5,iterations=10,stratify=False,n_jobs=1,rf_n_jobs=1,n_samples=1,seed=None,subset=False):
         self.feature_tags=feature_tags
         self.label_tags=label_tags
         self.n_folds=n_folds
@@ -363,6 +363,7 @@ class experiments:
         self.n_jobs=n_jobs
         self.n_samples=n_samples
         self.seed=seed
+        self.subset=subset
 
     def cross_val(self,df): 
         
@@ -376,7 +377,8 @@ class experiments:
             
             # sample subset of size equal to number of samples containing music (minimum subset)
 
-            df_subset=df.sample(n=self.n_samples,replace=False)
+            if self.subset:
+                df_subset=df.sample(n=self.n_samples,replace=False)
             
             # Partitioning options
 

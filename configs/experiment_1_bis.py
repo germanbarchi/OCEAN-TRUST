@@ -45,8 +45,8 @@ lists=[os.path.join(lists_path,j) for j in lists_]
 
 # Data sampling
 
-#n_train=4000
-#n_val=800    
+subset=False
+n_samples=None
 
 stratify=False
 iterations=100

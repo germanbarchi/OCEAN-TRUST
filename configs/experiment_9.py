@@ -48,6 +48,8 @@ lists=[os.path.join(lists_path,j) for j in lists_]
 
 # Data sampling
 
+subset=True
+
 with open(lists[1], 'r') as file:     # open music list 
     n_samples = len(file.readlines())
 
