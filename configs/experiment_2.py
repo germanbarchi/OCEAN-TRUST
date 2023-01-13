@@ -2,7 +2,8 @@
 Cross-val 
 Stratified
 Iterations 100
-Features: egemaps+duration 
+Features: egemaps 
+yamnet music files
 
 """
 from itertools import product

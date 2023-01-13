@@ -3,6 +3,7 @@ Cross-val
 Stratified
 Iterations 100
 Features: egemaps 
+music manual annotations 
 
 """
 from itertools import product

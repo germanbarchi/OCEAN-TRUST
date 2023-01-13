@@ -25,4 +25,4 @@ strat/strat/first_impressions_parts-no_speech_subset-200_groups-5_folds.csv
 strat/strat/first_impressions_parts
 
 data/labels/
-
+data/features/features_duration/

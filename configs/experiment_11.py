@@ -1,8 +1,9 @@
 """
 Cross-val 
-Folds by ID
+Stratified
 Iterations 100
 Features: egemaps
+Restricted samples 1665 (number of music samples)
 yamnet music files
 
 """
@@ -19,7 +20,7 @@ results_path = os.path.join('results',exp_name)
 
 # Labels
 
-labels_path='data/labels/new_partitions-labels.csv'
+labels_path='data/labels/stratified_df.csv'
 labels_df=pd.read_csv(labels_path)
 
 label_tags=['extraversion', 'neuroticism','agreeableness', 'conscientiousness', 'openness']
@@ -47,10 +48,10 @@ lists=[os.path.join(lists_path,j) for j in lists_]
 
 # Data sampling
 
-#n_train=4000
-#n_val=800    
+with open(lists[1], 'r') as file:     # open music list 
+    n_samples = len(file.readlines())     
 
-stratify=False
+stratify=True
 iterations=100
 
 # Modeling

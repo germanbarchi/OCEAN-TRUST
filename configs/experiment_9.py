@@ -1,9 +1,10 @@
 """
 Cross-val 
-Folds by ID
 Iterations 100
-Features: egemaps
-yamnet music files
+Stratified
+Features: normalized egemaps
+Restricted number of training samples: n_music_list  
+music manual annotations
 
 """
 from itertools import product
@@ -19,7 +20,7 @@ results_path = os.path.join('results',exp_name)
 
 # Labels
 
-labels_path='data/labels/new_partitions-labels.csv'
+labels_path='data/labels/final_labels.csv'
 labels_df=pd.read_csv(labels_path)
 
 label_tags=['extraversion', 'neuroticism','agreeableness', 'conscientiousness', 'openness']
@@ -27,9 +28,9 @@ label_tags=['extraversion', 'neuroticism','agreeableness', 'conscientiousness', 
 # Features
 
 data_path = 'data/features'
-feature_list=['new_partitions-egemaps_all_audio.csv',
-        'new_partitions-egemaps_silero_no_speech.csv',
-        'new_partitions-egemaps_silero_speech.csv']
+feature_list=['egemaps_all_audios_normalized.csv',
+        'egemaps_normalized_ns.csv',
+        'egemaps_normalized_s.csv']
 
 features=[os.path.join(data_path,i) for i in feature_list]
 
@@ -40,17 +41,17 @@ feature_tags=feature_df.columns[~feature_df.columns.isin(['Name','Part'])]
 
 lists_path='data/lists'
 lists_=['all_audio_complete_set.txt',
-    'yamnet_music_0.1.txt',
-    'yamnet_no_music_0.1.txt']
+    'music_list_manual_annot.txt',
+    'no_music_list_manual_annot.txt']
 
 lists=[os.path.join(lists_path,j) for j in lists_]
 
 # Data sampling
 
-#n_train=4000
-#n_val=800    
+with open(lists[1], 'r') as file:     # open music list 
+    n_samples = len(file.readlines())
 
-stratify=False
+stratify=True
 iterations=100
 
 # Modeling
