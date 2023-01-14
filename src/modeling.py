@@ -378,8 +378,10 @@ class experiments:
             # sample subset of size equal to number of samples containing music (minimum subset)
 
             if self.subset:
-                df_subset=df.sample(n=self.n_samples,replace=False)
-            
+                df_subset=df.sample(n=self.n_samples,replace=False)  # df cannot be overwritten because of parallel computation
+            else:
+                df_subset=df  
+
             # Partitioning options
 
             if self.stratify: 
