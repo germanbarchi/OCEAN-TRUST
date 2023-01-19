@@ -353,7 +353,7 @@ def predict(RF_reg, val,feature_tags,label_tags):
 
 class experiments:
 
-    def __init__(self,feature_tags,label_tags,n_folds=5,iterations=10,stratify=False,n_jobs=1,rf_n_jobs=1,n_samples=1,seed=None,subset=False):
+    def __init__(self,feature_tags,label_tags,n_folds=5,iterations=10,stratify=False,n_jobs=1,rf_n_jobs=1,n_samples=1,seed=None,subset=False,n_bootstrap=0):
         self.feature_tags=feature_tags
         self.label_tags=label_tags
         self.n_folds=n_folds
@@ -364,7 +364,8 @@ class experiments:
         self.n_samples=n_samples
         self.seed=seed
         self.subset=subset
-
+        self.n_bootstrap=n_bootstrap
+        
     def cross_val(self,df): 
         
         def func(i):
@@ -372,7 +373,7 @@ class experiments:
 
             feature_importance=[]
             metrics_list=[]
-            predictions_all=np.array([], dtype=np.int64).reshape(0,5)
+            predictions_all=pd.DataFrame([])
             y_val_all=pd.DataFrame()
             
             # sample subset of size equal to number of samples containing music (minimum subset)
@@ -399,23 +400,42 @@ class experiments:
                 r2_all,MAE_all,MSE_all,RMSE_all,y_val,predictions= predict(RF_reg,df_val,self.feature_tags,self.label_tags)
                 metrics=[r2_all,np.sqrt(r2_all),MAE_all,MSE_all,RMSE_all,fold]
                 metrics_list.append(metrics)
-                
-                predictions_all=np.concatenate((predictions_all,predictions),axis=0)
+                predictions=pd.DataFrame(predictions)
+                predictions_all=pd.concat([predictions_all,predictions],ignore_index=True)
                 y_val_all=pd.concat([y_val_all,y_val])
 
-                feature_importance.append(RF_reg.feature_importances_)
-            
-            r2_fold=r2_score(y_val_all, predictions_all)  
+                #feature_importance.append(RF_reg.feature_importances_)
 
+            r2_fold=r2_score(y_val_all.values.flatten(), predictions_all.values.flatten())
             metrics_list=np.transpose(metrics_list)
-            df_fold=pd.DataFrame({'r2':metrics_list[0],'r':metrics_list[1],'MAE':metrics_list[2],'MSE':metrics_list[3],'RMSE':metrics_list[4],'fold':metrics_list[5],'r2_fold':r2_fold})
+            df_fold=pd.DataFrame({'r2':metrics_list[0],'r':metrics_list[1],'MAE':metrics_list[2],'MSE':metrics_list[3],'RMSE':metrics_list[4],'fold':metrics_list[5],'r2_fold':r2_fold,'seed':i})
             
-            return df_fold
-        
-        metrics_=Parallel(n_jobs=self.n_jobs)(delayed(func)(i) for i in tqdm.tqdm(range(self.iterations)))
-        df_=pd.concat(metrics_)
+            if not self.n_bootstrap==0:
+                r2_bootstrap=[]
+                df_bootstrapping=pd.DataFrame([])                 
+                for n_boot in range(self.n_bootstrap):                                       
+                    
+                    final_df=y_val_all.reset_index(drop=True).join(predictions_all)
+                    final_df_=final_df.sample(n=y_val_all.shape[0],replace=True)
+                    
+                    y_val_flat=final_df_[self.label_tags].values.flatten()
+                    y_preds_shufle=final_df_.loc[:,~final_df.columns.isin(self.label_tags)]
+                    r2_boot=r2_score(y_val_flat,y_preds_shufle.values.flatten())
+                    r2_bootstrap.append(r2_boot)
+                print(r2_bootstrap)
+                df_boot=pd.DataFrame({'r2_boot_values':r2_bootstrap,'iterations':list(np.arange(self.n_bootstrap))})
+                df_boot.loc[:,'seed']=i
+                df_bootstrapping=pd.concat([df_bootstrapping,df_boot])
+            else:
+                df_bootstrapping=None
 
-        return df_
+            return df_fold,df_bootstrapping
+        
+        metrics_,boot_results=zip(*Parallel(n_jobs=self.n_jobs)(delayed(func)(i) for i in tqdm.tqdm(range(self.iterations))))
+        df_=pd.concat(metrics_)
+        df_results_boot=pd.concat(boot_results)
+
+        return df_,df_results_boot
 
     def learning_curve(self,df):
 
