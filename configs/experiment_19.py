@@ -1,9 +1,11 @@
 """
 Cross-val 
-Folds by ID
+Stratified
 Iterations 100
-Features: egemaps
-yamnet music files
+Bootstrapping in test partition: 10 iterations
+Features: speech ratio
+
+Filters: manual annotations no music 
 
 """
 from itertools import product
@@ -19,7 +21,7 @@ results_path = os.path.join('results',exp_name)
 
 # Labels
 
-labels_path='data/labels/new_partitions-labels.csv'
+labels_path='data/labels/final_labels.csv'
 labels_df=pd.read_csv(labels_path)
 
 label_tags=['extraversion', 'neuroticism','agreeableness', 'conscientiousness', 'openness']
@@ -27,30 +29,36 @@ label_tags=['extraversion', 'neuroticism','agreeableness', 'conscientiousness', 
 # Features
 
 data_path = 'data/features'
-feature_list=['new_partitions-egemaps_all_audio.csv',
-        'new_partitions-egemaps_silero_no_speech.csv',
-        'new_partitions-egemaps_silero_speech.csv']
+feature_list=['new_partitions-egemaps_all_audio.csv']
 
 features=[os.path.join(data_path,i) for i in feature_list]
 
 feature_df=pd.read_csv(features[0])
-feature_tags=feature_df.columns[~feature_df.columns.isin(['Name','Part'])]
+
+speech_ratio=True
+
+if speech_ratio:
+    feature_df=pd.merge(feature_df,labels_df[['filename','speech_ratio']],left_on='Name',right_on='filename').drop(columns='filename')
+
+feature_tags=['speech_ratio']
 
 # Subset Lists
 
 lists_path='data/lists'
-lists_=['all_audio_complete_set.txt',
-    'yamnet_music_0.1.txt',
-    'yamnet_no_music_0.1.txt']
+lists_=['no_music_list_manual_annot.txt']
 
 lists=[os.path.join(lists_path,j) for j in lists_]
 
 # Data sampling
 
-n_samples=None
+n_samples=None # number of samples to create subset or 'None' to use all data      
 
-stratify=False
+stratify=True
 iterations=100
+
+# Bootstrapping 
+
+n_bootstrap=10
 
 # Modeling
 

@@ -16,7 +16,7 @@ def main (exp_dict):
         print(method)
         configs=importlib.import_module(experiment)
 
-        exp=experiments(configs.feature_tags,configs.label_tags,n_folds=5,iterations=configs.iterations,stratify=configs.stratify,rf_n_jobs=configs.rf_n_jobs,n_jobs=configs.n_jobs,subset=configs.subset,n_samples=configs.n_samples,seed=configs.seed,n_bootstrap=configs.n_bootstrap) 
+        exp=experiments(configs.feature_tags,configs.label_tags,n_folds=5,iterations=configs.iterations,stratify=configs.stratify,rf_n_jobs=configs.rf_n_jobs,n_jobs=configs.n_jobs,n_samples=configs.n_samples,seed=configs.seed,n_bootstrap=configs.n_bootstrap,random=configs.random) 
         
         dfs=[]
         dfs_boot=[]
@@ -53,7 +53,7 @@ def main (exp_dict):
             
 if __name__=='__main__':
 
-    with open ('experiments.JSON') as jsonfile:
+    with open ('individual_experiment.JSON') as jsonfile:
         experiment_dict=json.load(jsonfile)
 
     main(experiment_dict)

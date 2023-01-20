@@ -319,12 +319,15 @@ def bootstrap_parallel_no_partitions_learning_curve(df,iterations,feature_tags,l
 
     return final_df
     
-def train_model(df_train,feature_tags,label_tags,seed,rf_n_jobs=None):  
+def train_model(df_train,feature_tags,label_tags,seed,rf_n_jobs=None,random=False):  
     
     X_train,Y_train=split_X_Y(df_train,feature_tags,label_tags)
     
     RF_reg=RandomForestRegressor(random_state=seed,n_jobs=rf_n_jobs) 
     
+    if random:
+        Y_train=Y_train.sample(frac=1,replace=True)
+
     RF_reg.fit(X_train.values,Y_train.values)
  
     return RF_reg
@@ -353,7 +356,7 @@ def predict(RF_reg, val,feature_tags,label_tags):
 
 class experiments:
 
-    def __init__(self,feature_tags,label_tags,n_folds=5,iterations=10,stratify=False,n_jobs=1,rf_n_jobs=1,n_samples=1,seed=None,subset=False,n_bootstrap=0):
+    def __init__(self,feature_tags,label_tags,n_folds=5,iterations=10,stratify=False,n_jobs=1,rf_n_jobs=1,n_samples=1,seed=None,n_bootstrap=0,random=False):
         self.feature_tags=feature_tags
         self.label_tags=label_tags
         self.n_folds=n_folds
@@ -363,9 +366,9 @@ class experiments:
         self.n_jobs=n_jobs
         self.n_samples=n_samples
         self.seed=seed
-        self.subset=subset
         self.n_bootstrap=n_bootstrap
-        
+        self.random=random
+
     def cross_val(self,df): 
         
         def func(i):
@@ -378,7 +381,7 @@ class experiments:
             
             # sample subset of size equal to number of samples containing music (minimum subset)
 
-            if self.subset:
+            if not self.n_samples==None:
                 df_subset=df.sample(n=self.n_samples,replace=False)  # df cannot be overwritten because of parallel computation
             else:
                 df_subset=df  
@@ -395,7 +398,7 @@ class experiments:
             for fold in range(self.n_folds):
                 df_val=df_final[df_final['fold']==float(fold)]
                 df_train=df_final[~df_final['basename'].isin(df_val.basename)]
-                RF_reg= train_model (df_train,self.feature_tags,self.label_tags,self.seed,rf_n_jobs=self.rf_n_jobs)
+                RF_reg= train_model (df_train,self.feature_tags,self.label_tags,self.seed,rf_n_jobs=self.rf_n_jobs,random=self.random)
                         
                 r2_all,MAE_all,MSE_all,RMSE_all,y_val,predictions= predict(RF_reg,df_val,self.feature_tags,self.label_tags)
                 metrics=[r2_all,np.sqrt(r2_all),MAE_all,MSE_all,RMSE_all,fold]
@@ -466,7 +469,7 @@ class experiments:
             for fold in range(self.n_folds):
                 df_val=df_final[df_final['fold']==float(fold)]
                 df_train=df_final[~df_final['basename'].isin(df_val.basename)]
-                RF_reg= train_model (df_train,self.feature_tags,self.label_tags,42,rf_n_jobs=self.rf_n_jobs)
+                RF_reg= train_model (df_train,self.feature_tags,self.label_tags,42,rf_n_jobs=self.rf_n_jobs,random=self.random)
                         
                 r2_all,MAE_all,MSE_all,RMSE_all,y_val,predictions= predict(RF_reg,df_val,self.feature_tags,self.label_tags)
                 metrics=[r2_all,np.sqrt(r2_all),MAE_all,MSE_all,RMSE_all,fold]

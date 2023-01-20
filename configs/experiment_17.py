@@ -21,7 +21,7 @@ results_path = os.path.join('results',exp_name)
 
 # Labels
 
-labels_path='data/labels/stratified_df.csv'
+labels_path='data/labels/final_labels.csv'
 labels_df=pd.read_csv(labels_path)
 
 label_tags=['extraversion', 'neuroticism','agreeableness', 'conscientiousness', 'openness']
@@ -48,16 +48,14 @@ lists=[os.path.join(lists_path,j) for j in lists_]
 
 # Data sampling
 
-subset=True
-
-n_samples=1000     
+n_samples=None   # number of samples to create subset or 'None' to use all data 
 
 stratify=True
 iterations=100
 
 # Bootstrapping 
 
-n_bootstrap=5
+n_bootstrap=10
 
 # Modeling
 
