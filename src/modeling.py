@@ -409,7 +409,7 @@ class experiments:
 
                 #feature_importance.append(RF_reg.feature_importances_)
 
-            r2_fold=r2_score(y_val_all.values.flatten(), predictions_all.values.flatten())
+            r2_fold=r2_score(y_val_all, predictions_all)
             metrics_list=np.transpose(metrics_list)
             df_fold=pd.DataFrame({'r2':metrics_list[0],'r':metrics_list[1],'MAE':metrics_list[2],'MSE':metrics_list[3],'RMSE':metrics_list[4],'fold':metrics_list[5],'r2_fold':r2_fold,'seed':i})
             
@@ -421,9 +421,9 @@ class experiments:
                     final_df=y_val_all.reset_index(drop=True).join(predictions_all)
                     final_df_=final_df.sample(n=y_val_all.shape[0],replace=True)
                     
-                    y_val_flat=final_df_[self.label_tags].values.flatten()
+                    y_val_shufle=final_df_[self.label_tags]
                     y_preds_shufle=final_df_.loc[:,~final_df.columns.isin(self.label_tags)]
-                    r2_boot=r2_score(y_val_flat,y_preds_shufle.values.flatten())
+                    r2_boot=r2_score(y_val_shufle,y_preds_shufle)
                     r2_bootstrap.append(r2_boot)
                 print(r2_bootstrap)
                 df_boot=pd.DataFrame({'r2_boot_values':r2_bootstrap,'iterations':list(np.arange(self.n_bootstrap))})
