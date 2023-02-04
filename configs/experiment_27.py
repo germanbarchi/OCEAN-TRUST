@@ -26,6 +26,8 @@ labels_df=pd.read_csv(labels_path)
 
 label_tags=['openness']
 
+random=False
+
 # Features
 
 data_path = 'data/features'

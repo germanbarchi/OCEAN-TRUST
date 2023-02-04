@@ -42,13 +42,21 @@ def main (exp_dict):
             dfs.append(df)
             df_out=pd.concat(dfs).reset_index(drop=True)  
 
+            if len(configs.label_tags)==5:
+                trait='All'
+            else:
+                trait=configs.label_tags[0]
+
             if not configs.n_bootstrap==0: 
                 df_boot['filter']=filter_name
                 df_boot['feature']=features_name
                 dfs_boot.append(df_boot)
                 dfs_boot_out=pd.concat(dfs_boot).reset_index(drop=True)         
+                
+                dfs_boot_out.loc[:,'trait']=trait
                 dfs_boot_out.to_csv(os.path.join(configs.results_path,'results_bootstrapping.csv'))
-            
+
+            df_out.loc[:,'trait']=trait            
             df_out.to_csv(os.path.join(configs.results_path,'results.csv'))
             
 if __name__=='__main__':

@@ -6,8 +6,11 @@ AUDIO_DIR='/home/gbarchi/Documentos/Trust/Personality/OCEAN_new_structure/data/a
 
 for i in $(seq 1 2 15)
 do 
-    #python ../../src/extract_egemaps.py $NAME/egemaps_ns_duration_$i.csv --files_path ../silero/silero_no_speech --duration $i
-    python ../../src/extract_egemaps.py $NAME/egemaps_s_duration_$i.csv --files_path ../data/silero/silero_speech --duration $i
-    python ../../src/extract_egemaps.py $NAME/egemaps_all_audio_duration_$i.csv --files_path $AUDIO_DIR --duration $i
+    #python ../../src/extract_egemaps.py $NAME/egemaps_ns_duration_$i.csv --files_path ../../silero_VAD/silero_no_speech --duration $i
+    #python ../../src/extract_egemaps.py $NAME/egemaps_s_duration_$i.csv --files_path ../../silero_VAD/silero_speech --duration $i
+    #python ../../src/extract_egemaps.py $NAME/egemaps_all_audio_duration_$i.csv --files_path $AUDIO_DIR --duration $i
 
+    # generate egemaps with random samples
+
+    python ../../src/extract_egemaps.py $NAME/egemaps_all_audio_duration_${i}_random.csv --files_path $AUDIO_DIR --duration $i --random_sampling True
 done

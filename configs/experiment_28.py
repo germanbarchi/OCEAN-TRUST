@@ -1,11 +1,8 @@
 """
-Cross-val 
-Stratified
+learning curve 
 Iterations 100
-Bootstrapping in test partition: 10 iterations
+Stratified
 Features: egemaps
-Restricted samples: 1000
-Filters:yamnet music files and manual annotations 
 
 """
 from itertools import product
@@ -21,7 +18,7 @@ results_path = os.path.join('results',exp_name)
 
 # Labels
 
-labels_path='data/labels/stratified_df.csv'
+labels_path='data/labels/final_labels.csv'
 labels_df=pd.read_csv(labels_path)
 
 label_tags=['extraversion', 'neuroticism','agreeableness', 'conscientiousness', 'openness']
@@ -31,35 +28,36 @@ random=False
 # Features
 
 data_path = 'data/features'
-feature_list=['new_partitions-egemaps_all_audio.csv',
-        'new_partitions-egemaps_silero_no_speech.csv',
-        'new_partitions-egemaps_silero_speech.csv']
+feature_list=['new_partitions-egemaps_silero_speech.csv']
 
 features=[os.path.join(data_path,i) for i in feature_list]
 
 feature_df=pd.read_csv(features[0])
+
+speech_ratio=True
+
+if speech_ratio:
+    feature_df=pd.merge(feature_df,labels_df[['filename','speech_ratio']],left_on='Name',right_on='filename').drop(columns='filename')
+
 feature_tags=feature_df.columns[~feature_df.columns.isin(['Name','Part'])]
 
 # Subset Lists
 
 lists_path='data/lists'
-lists_=['all_audio_complete_set.txt',
-       'yamnet_music_0.1.txt',
-       'music_list_manual_annot.txt',
-       'no_music_list_manual_annot.txt']
+lists_=['all_audio_complete_set.txt']
 
 lists=[os.path.join(lists_path,j) for j in lists_]
 
 # Data sampling
 
-n_samples=1000     
+n_samples=None
 
 stratify=True
 iterations=100
 
 # Bootstrapping 
 
-n_bootstrap=5
+n_bootstrap=0
 
 # Modeling
 

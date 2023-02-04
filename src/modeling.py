@@ -443,6 +443,7 @@ class experiments:
     def learning_curve(self,df):
 
         dfs=[]
+        dfs_boot=[]
         n_samples=np.arange(1,11)*0.1
         
         def func(i):
@@ -485,18 +486,40 @@ class experiments:
             metrics_list=np.transpose(metrics_list)
             df_fold=pd.DataFrame({'r2':metrics_list[0],'r':metrics_list[1],'MAE':metrics_list[2],'MSE':metrics_list[3],'RMSE':metrics_list[4],'fold':metrics_list[5],'r2_fold':r2_fold})
             
-            return df_fold
+            if not self.n_bootstrap>=0:
+                r2_bootstrap=[]
+                df_bootstrapping=pd.DataFrame([])                 
+                for n_boot in range(self.n_bootstrap):                                       
+                    
+                    final_df=y_val_all.reset_index(drop=True).join(predictions_all)
+                    final_df_=final_df.sample(n=y_val_all.shape[0],replace=True)
+                    
+                    y_val_shufle=final_df_[self.label_tags]
+                    y_preds_shufle=final_df_.loc[:,~final_df.columns.isin(self.label_tags)]
+                    r2_boot=r2_score(y_val_shufle,y_preds_shufle)
+                    r2_bootstrap.append(r2_boot)
+                print(r2_bootstrap)
+                df_boot=pd.DataFrame({'r2_boot_values':r2_bootstrap,'iterations':list(np.arange(self.n_bootstrap))})
+                df_boot.loc[:,'seed']=i
+                df_bootstrapping=df_bootstrapping.append(df_boot)
+            else:
+                df_bootstrapping=pd.DataFrame([]) 
+
+            return df_fold,df_bootstrapping
         
         for step in n_samples:
-            metrics_=Parallel(n_jobs=self.n_jobs)(delayed(func)(i) for i in tqdm.tqdm(range(self.iterations)))
+            metrics_,boot_results=Parallel(n_jobs=self.n_jobs)(delayed(func)(i) for i in tqdm.tqdm(range(self.iterations)))
             df_=pd.concat(metrics_)
             df_.loc[:,'%_samples']=step
-        
+            df_results_boot=pd.concat(boot_results)
+            df_results_boot.loc[:,'%_samples']=step
             dfs.append(df_)
+            dfs_boot.append(df_results_boot)
 
         final_df=pd.concat(dfs).reset_index(drop=True)  
+        final_df_boot=pd.concat(dfs_boot).reset_index(drop=True) 
         
-        return final_df
+        return final_df,final_df_boot
        
 
 def create_importance_df(importance_data,data_type,feature_tags):

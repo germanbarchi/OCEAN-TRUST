@@ -12,6 +12,7 @@ from itertools import product
 import glob 
 import os,sys
 import pandas as pd
+from IPython import embed
 
 # Global
 exp_name=os.path.basename(__file__).split('.')[0]
@@ -25,6 +26,8 @@ labels_path='data/labels/final_labels.csv'
 labels_df=pd.read_csv(labels_path)
 
 label_tags=['extraversion', 'neuroticism','agreeableness', 'conscientiousness', 'openness']
+
+random=False
 
 # Features
 
@@ -43,6 +46,8 @@ if speech_ratio:
     feature_df=pd.merge(feature_df,labels_df[['filename','speech_ratio']],left_on='Name',right_on='filename').drop(columns='filename')
 
 feature_tags=feature_df.columns[~feature_df.columns.isin(['Name','Part'])]
+
+embed()
 
 # Subset Lists
 
