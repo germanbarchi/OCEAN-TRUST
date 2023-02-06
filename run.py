@@ -2,6 +2,7 @@ import os,sys,tqdm,json,importlib
 from pathlib import Path
 #from IPython import embed
 import pandas as pd
+import argparse
 
 from src.utils import format_data
 from src.utils import normalize_data
@@ -61,7 +62,16 @@ def main (exp_dict):
             
 if __name__=='__main__':
 
-    with open ('individual_experiment.JSON') as jsonfile:
+    argparser=argparse.ArgumentParser(description='Run experiments')
+    argparser.add_argument('--multiple',help='True to run multiple experiments',default=False)
+    args=vars(argparser.parse_args())
+
+    if args['multiple']:
+        config_file='experiments.JSON'
+    else:
+        config_file='individual_experiments.JSON'
+        
+    with open (config_file) as jsonfile:
         experiment_dict=json.load(jsonfile)
 
     main(experiment_dict)

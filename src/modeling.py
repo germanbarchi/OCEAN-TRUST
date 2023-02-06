@@ -15,6 +15,9 @@ from sklearn.utils import resample
 from joblib import Parallel, delayed
 from IPython import embed
 
+import sys 
+sys.path.append('../src')
+
 from src.utils import make_partitions
 
 def cross_val_5_folds(df,n_train,n_val,feature_tags,label_tags,seed):
@@ -318,6 +321,7 @@ def bootstrap_parallel_no_partitions_learning_curve(df,iterations,feature_tags,l
     final_df=pd.concat(dfs).reset_index(drop=True)   
 
     return final_df
+
     
 def train_model(df_train,feature_tags,label_tags,seed,rf_n_jobs=None,random=False):  
     
@@ -353,6 +357,16 @@ def predict(RF_reg, val,feature_tags,label_tags):
 
     return r2,MAE,MSE,RMSE,Y_val,predictions
 
+#def create_importance_df(importance_data,feature_tags):
+    
+#    df_importance=pd.DataFrame()
+#    for i in range(len(importance_data)):
+#        percentil_95=np.percentile(importance_data[i],95)
+#        values=importance_data[i][importance_data[i]>percentil_95]
+#        values_indexes=np.asarray(importance_data[i]>percentil_95).nonzero()
+#        importance_df=pd.DataFrame({'features':feature_tags[values_indexes],'value':values,'fold':i})
+#        df_importance=pd.concat([df_importance,importance_df])
+#    return df_importance
 
 class experiments:
 
@@ -407,7 +421,10 @@ class experiments:
                 predictions_all=pd.concat([predictions_all,predictions],ignore_index=True)
                 y_val_all=pd.concat([y_val_all,y_val])
 
-                #feature_importance.append(RF_reg.feature_importances_)
+                # Compute feature importance for each fold                
+                #importance_df=create_importance_df(RF_reg.feature_importances_)
+                #df_importance=pd.DataFrame({'importance':feature_importance})
+                #df_importance.loc[:,'fold']=fold
 
             r2_fold=r2_score(y_val_all, predictions_all)
             metrics_list=np.transpose(metrics_list)
@@ -522,13 +539,3 @@ class experiments:
         return final_df,final_df_boot
        
 
-def create_importance_df(importance_data,data_type,feature_tags):
-    
-    df_importance=pd.DataFrame()
-    for i in range(len(importance_data)):
-        percentil_95=np.percentile(importance_data[i],95)
-        values=importance_data[i][importance_data[i]>percentil_95]
-        values_indexes=np.asarray(importance_data[i]>percentil_95).nonzero()
-        importance_df=pd.DataFrame({'features':feature_tags[values_indexes],'value':values,'fold':i,'data_type':data_type})
-        df_importance=pd.concat([df_importance,importance_df])
-    return df_importance

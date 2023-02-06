@@ -44,22 +44,32 @@ def p95_normalization(y):
 
 def extract_features(features_path,file_paths,duration=0,random_sampling=False,normalize=False,norm_method='p95',blacklist_dir=''):
     
-    FS=16000
-    df=pd.DataFrame()    
+    FS=16000  
     
-    if not blacklist_dir:
-        with open (blacklist,'r') as blist:
+    if os.path.exists(features_path):
+        df=pd.read_csv(features_path)
+        ommit_samples=list(df['Name'].values)
+    else:
+        df=pd.DataFrame()
+        ommit_samples=[]
+
+    if blacklist_dir:
+        with open (blacklist_dir,'r') as blist:
             blacklist=blist.read().splitlines()
     else:
         blacklist=[]
 
     for file in tqdm.tqdm(file_paths):   
-
-        if not file.split('/')[-1] in blacklist:
+        
+        name=file.split('/')[-1]
+        
+        if (not name in blacklist) and (not name in ommit_samples):
 
             file_tag, partition=return_names(file)             
             signal=librosa.core.load(file,sr=FS)[0]
 
+            print(file_tag)
+  
             if normalize:
                 if norm_method=='p95':
                     signal=p95_normalization(signal)
@@ -68,14 +78,16 @@ def extract_features(features_path,file_paths,duration=0,random_sampling=False,n
             
             if not duration==0:       
                 n_samples=int(duration*FS)
+                n_samples=int(duration*FS)
 
                 if random_sampling:
                     max_start_index=len(signal)-n_samples
+                    print(max_start_index)
                     start=random.randint(0,max_start_index)
-                    end=start+n_samples
+                    end=start+n_samples-1
                 else:
                     start=0
-                    end=n_samples
+                    end=n_samples-1
 
                 if len(signal)>(duration):
                     functionals=smile(signal[start:end],FS)
