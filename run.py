@@ -63,14 +63,15 @@ def main (exp_dict):
 if __name__=='__main__':
 
     argparser=argparse.ArgumentParser(description='Run experiments')
-    argparser.add_argument('--multiple',help='True to run multiple experiments',default=False)
+    argparser.add_argument('--multiple',help='True to run multiple experiments', type= bool, default=False)
     args=vars(argparser.parse_args())
-
-    if args['multiple']:
-        config_file='experiments.JSON'
-    else:
-        config_file='individual_experiments.JSON'
+    
+    #if args['multiple']:
+    #    config_file='experiments.JSON'
+    #else:
+    #    config_file='individual_experiments.JSON'
         
+    config_file='experiments.JSON'
     with open (config_file) as jsonfile:
         experiment_dict=json.load(jsonfile)
 

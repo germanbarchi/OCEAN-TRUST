@@ -384,8 +384,13 @@ class experiments:
         self.random=random
 
     def cross_val(self,df): 
-        
+
+        df_bootstrapping=pd.DataFrame([])
+
         def func(i):
+            
+            nonlocal df_bootstrapping
+
             partition=make_partitions(self.n_folds)
 
             feature_importance=[]
@@ -426,28 +431,28 @@ class experiments:
                 #df_importance=pd.DataFrame({'importance':feature_importance})
                 #df_importance.loc[:,'fold']=fold
 
+                if not self.n_bootstrap==0:
+                    
+                    r2_bootstrap=[]                 
+                    for n_boot in range(self.n_bootstrap):                                       
+                        
+                        final_df=y_val_all.reset_index(drop=True).join(predictions_all)
+                        final_df_=final_df.sample(n=y_val_all.shape[0],replace=True)
+                        
+                        y_val_shufle=final_df_[self.label_tags]
+                        y_preds_shufle=final_df_.loc[:,~final_df.columns.isin(self.label_tags)]
+                        r2_boot=r2_score(y_val_shufle,y_preds_shufle)
+                        r2_bootstrap.append(r2_boot)
+                    print(r2_bootstrap)
+                    df_boot=pd.DataFrame({'r2_boot_values':r2_bootstrap,'n_boot':list(np.arange(self.n_bootstrap))})
+                    df_boot.loc[:,'seed']=i
+                    df_boot.loc[:,'fold']=fold
+                    df_bootstrapping=pd.concat([df_bootstrapping,df_boot])
+
             r2_fold=r2_score(y_val_all, predictions_all)
             metrics_list=np.transpose(metrics_list)
             df_fold=pd.DataFrame({'r2':metrics_list[0],'r':metrics_list[1],'MAE':metrics_list[2],'MSE':metrics_list[3],'RMSE':metrics_list[4],'fold':metrics_list[5],'r2_fold':r2_fold,'seed':i})
             
-            if not self.n_bootstrap==0:
-                r2_bootstrap=[]
-                df_bootstrapping=pd.DataFrame([])                 
-                for n_boot in range(self.n_bootstrap):                                       
-                    
-                    final_df=y_val_all.reset_index(drop=True).join(predictions_all)
-                    final_df_=final_df.sample(n=y_val_all.shape[0],replace=True)
-                    
-                    y_val_shufle=final_df_[self.label_tags]
-                    y_preds_shufle=final_df_.loc[:,~final_df.columns.isin(self.label_tags)]
-                    r2_boot=r2_score(y_val_shufle,y_preds_shufle)
-                    r2_bootstrap.append(r2_boot)
-                print(r2_bootstrap)
-                df_boot=pd.DataFrame({'r2_boot_values':r2_bootstrap,'iterations':list(np.arange(self.n_bootstrap))})
-                df_boot.loc[:,'seed']=i
-                df_bootstrapping=pd.concat([df_bootstrapping,df_boot])
-            else:
-                df_bootstrapping=None
 
             return df_fold,df_bootstrapping
         
