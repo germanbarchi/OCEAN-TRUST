@@ -7,6 +7,11 @@ from pathlib import Path
 
 parent_dir=pathlib.Path(os.getcwd())
 
+import sys
+
+#sys.path.append('../src')
+#from src.toolbox import silero_timestamps
+
 def yamnet_classifier_batch(data_path, data_save_path,model_path,map):
     
     code_path=pathlib.Path.joinpath(parent_dir.parent,'yamnet/models/research/audioset/yamnet/inference_batch.py')
@@ -25,9 +30,7 @@ def yamnet_classifier(data_path):
     return prediction,yamnet_classes
 
 def silero_timestamps(file,dinamic_threshold):
-
-    code_path=str(pathlib.Path.joinpath(parent_dir.parent,'silero_VAD/silero.py'))
-    silero = SourceFileLoader("silero_timestamps", code_path).load_module()    
-    timestamps, speech_segments, non_speech_segments, sr=silero.silero_timestamps(file, dinamic_threshold)
+ 
+    timestamps, speech_segments, non_speech_segments, sr=silero_timestamps(file, dinamic_threshold)
 
     return timestamps, speech_segments,non_speech_segments, sr

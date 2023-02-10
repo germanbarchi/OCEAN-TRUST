@@ -71,7 +71,7 @@ if __name__=='__main__':
     #else:
     #    config_file='individual_experiments.JSON'
         
-    config_file='experiments.JSON'
+    config_file='individual_experiment.JSON'
     with open (config_file) as jsonfile:
         experiment_dict=json.load(jsonfile)
 

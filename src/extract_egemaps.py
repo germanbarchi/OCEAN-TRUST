@@ -1,4 +1,5 @@
-import sys,os 
+import sys,os
+from turtle import back 
 import librosa
 import glob
 import opensmile
@@ -8,6 +9,12 @@ import pandas as pd
 import tqdm
 from IPython import embed
 import random
+
+sys.path.append('../../silero_VAD')
+
+import silero
+
+from joblib import Parallel,delayed
 
 def return_names(file_paths):
     split_path=file_paths.split('/')
@@ -42,9 +49,8 @@ def p95_normalization(y):
         y=y/(np.percentile(y,95))
     return y
 
-def extract_features(features_path,file_paths,duration=0,random_sampling=False,normalize=False,norm_method='p95',blacklist_dir=''):
-    
-    FS=16000  
+
+def check_data(features_path,blacklist_dir):
     
     if os.path.exists(features_path):
         df=pd.read_csv(features_path)
@@ -58,50 +64,58 @@ def extract_features(features_path,file_paths,duration=0,random_sampling=False,n
             blacklist=blist.read().splitlines()
     else:
         blacklist=[]
+    
+    return df,ommit_samples,blacklist
 
-    for file in tqdm.tqdm(file_paths):   
+def extract_features(file_path,features_path,duration=0,random_sampling=False,normalize=False,norm_method='p95',speech_ratio_option=False,ommit_samples=[],blacklist=''):
+    
+    FS=16000  
+    
+    name=file_path.split('/')[-1]
+    
+    if (not name in blacklist) and (not name in ommit_samples):
+
+        file_tag, partition=return_names(file_path)             
+        signal=librosa.core.load(file_path,sr=FS)[0]
+
+        print(file_tag)
+
+        if normalize:
+            if norm_method=='p95':
+                signal=p95_normalization(signal)
+            elif norm_method=='min_max':    
+                signal=min_max_normalization(signal)
         
-        name=file.split('/')[-1]
-        
-        if (not name in blacklist) and (not name in ommit_samples):
+        if not duration==0:       
+            n_samples=int(duration*FS)
 
-            file_tag, partition=return_names(file)             
-            signal=librosa.core.load(file,sr=FS)[0]
-
-            print(file_tag)
-  
-            if normalize:
-                if norm_method=='p95':
-                    signal=p95_normalization(signal)
-                elif norm_method=='min_max':    
-                    signal=min_max_normalization(signal)
-            
-            if not duration==0:       
-                n_samples=int(duration*FS)
-                n_samples=int(duration*FS)
-
-                if random_sampling:
-                    max_start_index=len(signal)-n_samples
-                    print(max_start_index)
-                    start=random.randint(0,max_start_index)
-                    end=start+n_samples-1
-                else:
-                    start=0
-                    end=n_samples-1
-
-                if len(signal)>(duration):
-                    functionals=smile(signal[start:end],FS)
-                else: 
-                    functionals=pd.DataFrame()
+            if random_sampling:
+                max_start_index=len(signal)-n_samples
+                start=random.randint(0,max_start_index)
+                end=start+n_samples-1
             else:
-                functionals=smile(signal,FS)
+                start=0
+                end=n_samples-1
 
-            if not functionals.empty:    
-                functionals['Part']=partition
-                functionals['Name']=file_tag 
-                df=concat(df,functionals)
+            if len(signal)>(duration):
+                functionals=smile(signal[start:end],FS)
+            else: 
+                functionals=pd.DataFrame()
+        else:
+            functionals=smile(signal,FS)
 
-        df.to_csv(features_path,index=False) 
+        if not functionals.empty:    
+            functionals['Part']=partition
+            functionals['Name']=file_tag 
+            
+            if speech_ratio_option:
+                speech_ratio= silero.silero_timestamps(file_path,start,end,0.5)[4]
+                functionals['speech_ratio']=speech_ratio
+
+        if not os.path.isfile(features_path):
+            functionals.to_csv(features_path)
+        else: 
+            functionals.to_csv(features_path, mode='a', header=False)
 
 if __name__ == '__main__':
     
@@ -113,8 +127,13 @@ if __name__ == '__main__':
     argparser.add_argument('--normalize',help='If True, normalization will be applied. Default method is percentile 95')
     argparser.add_argument('--norm_method',help='select <p95> or <min_max>')
     argparser.add_argument('--blacklist',help='blacklist text files containing samples names to be removed')
+    argparser.add_argument('--speech_ratio',help='enables speech ratio computing',default=False)
     args=vars(argparser.parse_args())
-    
+
     files_path_=glob.glob(os.path.join(args['files_path'],'*/*.wav'))
 
-    extract_features(args['features_path'],files_path_,duration=int(args['duration']),random_sampling=args['random_sampling'],normalize=args['normalize'],norm_method=args['norm_method'],blacklist_dir=args['blacklist'])
+    df,ommit,b_list=check_data(args['features_path'],blacklist_dir=args['blacklist'])    
+
+    Parallel(n_jobs=4)(delayed(extract_features)(
+    file_path,args['features_path'],duration=int(args['duration']),random_sampling=args['random_sampling'],normalize=args['normalize'],
+    norm_method=args['norm_method'],speech_ratio_option=args['speech_ratio'],ommit_samples=ommit,blacklist=b_list) for file_path in tqdm.tqdm(files_path_))

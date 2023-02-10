@@ -12,6 +12,7 @@ data/silero/
 data/no_speech_audios
 data/manual_music_annotations/audio/ 
 
+
 yamnet/
 
 results/
@@ -26,5 +27,7 @@ strat/strat/first_impressions_parts
 
 data/labels/
 data/features/features_duration/
+data/features/features_duration_sr/
 
 figures/
+
