@@ -1,0 +1,9 @@
+\begin{tabular}{lrrrrrrrr}
+\toprule
+{} &  loudness\_sma3\_amean &  equivalentSoundLevel\_dBp &  extraversion &  neuroticism &  agreeableness &  conscientiousness &  openness &  labels\_mean \\
+\midrule
+loudness\_sma3\_amean      &             1.000000 &                  0.835913 &      0.258173 &     0.296899 &       0.198371 &           0.196846 &  0.294171 &     0.287495 \\
+equivalentSoundLevel\_dBp &             0.835913 &                  1.000000 &      0.201125 &     0.268998 &       0.195354 &           0.184100 &  0.244533 &     0.252409 \\
+
+\bottomrule
+\end{tabular}

@@ -332,7 +332,7 @@ def train_model(df_train,feature_tags,label_tags,seed,rf_n_jobs=None,random=Fals
     if random:
         Y_train=Y_train.sample(frac=1,replace=True)
 
-    RF_reg.fit(X_train.values,Y_train.values)
+    RF_reg.fit(X_train.values,Y_train.values.reshape(Y_train.shape[0],))
  
     return RF_reg
 
@@ -357,20 +357,33 @@ def predict(RF_reg, val,feature_tags,label_tags):
 
     return r2,MAE,MSE,RMSE,Y_val,predictions
 
-#def create_importance_df(importance_data,feature_tags):
+def create_importance_p95(importance_data,feature_tags):
     
-#    df_importance=pd.DataFrame()
-#    for i in range(len(importance_data)):
-#        percentil_95=np.percentile(importance_data[i],95)
-#        values=importance_data[i][importance_data[i]>percentil_95]
-#        values_indexes=np.asarray(importance_data[i]>percentil_95).nonzero()
-#        importance_df=pd.DataFrame({'features':feature_tags[values_indexes],'value':values,'fold':i})
-#        df_importance=pd.concat([df_importance,importance_df])
-#    return df_importance
+    df_importance=pd.DataFrame()
+    for i in range(len(importance_data)):
+        percentil_95=np.percentile(importance_data[i],95)
+        values=importance_data[i][importance_data[i]>percentil_95]
+        values_indexes=np.asarray(importance_data[i]>percentil_95).nonzero()
+        importance_df=pd.DataFrame({'features':feature_tags[values_indexes],'value':values,'fold':i})
+        df_importance=pd.concat([df_importance,importance_df])
+    return df_importance
+
+def top_feature_importance(importance,features,top_n):
+    
+    a=[]    
+    for i in range(len(importance)):
+        a.append((importance[i],features[i]))
+    a.sort(key=lambda x: x[0],reverse=True)
+    df=a[:top_n] # select top n features
+    values,names=zip(*df)
+    df=pd.DataFrame.from_dict({'importance':values,'feature_tag':names})   
+
+    return df
 
 class experiments:
 
-    def __init__(self,feature_tags,label_tags,n_folds=5,iterations=10,stratify=False,n_jobs=1,rf_n_jobs=1,n_samples=1,seed=None,n_bootstrap=0,random=False):
+    def __init__(self,feature_tags,label_tags,n_folds=5,iterations=10,stratify=False,
+    n_jobs=1,rf_n_jobs=1,n_samples=1,seed=None,n_bootstrap=0,random=False,feature_importance=False,top_n=5):
         self.feature_tags=feature_tags
         self.label_tags=label_tags
         self.n_folds=n_folds
@@ -382,20 +395,24 @@ class experiments:
         self.seed=seed
         self.n_bootstrap=n_bootstrap
         self.random=random
-
+        self.feature_importance=feature_importance
+        self.top_n=top_n
+    
     def cross_val(self,df): 
 
         df_bootstrapping=pd.DataFrame([])
+        importance_df=pd.DataFrame([])
 
         def func(i):
             
             nonlocal df_bootstrapping
+            nonlocal importance_df
 
             partition=make_partitions(self.n_folds)
 
-            feature_importance=[]
             metrics_list=[]
             predictions_all=pd.DataFrame([])
+            
             y_val_all=pd.DataFrame()
             
             # sample subset of size equal to number of samples containing music (minimum subset)
@@ -414,7 +431,7 @@ class experiments:
 
             # Run cross Val
 
-            for fold in range(self.n_folds):
+            for fold in tqdm.tqdm(range(self.n_folds),desc='Training on folds'):
                 df_val=df_final[df_final['fold']==float(fold)]
                 df_train=df_final[~df_final['basename'].isin(df_val.basename)]
                 RF_reg= train_model (df_train,self.feature_tags,self.label_tags,self.seed,rf_n_jobs=self.rf_n_jobs,random=self.random)
@@ -427,14 +444,16 @@ class experiments:
                 y_val_all=pd.concat([y_val_all,y_val])
 
                 # Compute feature importance for each fold                
-                #importance_df=create_importance_df(RF_reg.feature_importances_)
-                #df_importance=pd.DataFrame({'importance':feature_importance})
-                #df_importance.loc[:,'fold']=fold
-
+                if self.feature_importance:    
+                    importance=top_feature_importance(RF_reg.feature_importances_,self.feature_tags,self.top_n)                
+                    importance.loc[:,'fold']=fold
+                    importance.loc[:,'seed']=i
+                    importance_df=pd.concat([importance_df,importance])
+                
                 if not self.n_bootstrap==0:
                     
                     r2_bootstrap=[]                 
-                    for n_boot in range(self.n_bootstrap):                                       
+                    for n_boot in tqdm.tqdm(range(self.n_bootstrap),desc='Boostrapping'):                                       
                         
                         final_df=y_val_all.reset_index(drop=True).join(predictions_all)
                         final_df_=final_df.sample(n=y_val_all.shape[0],replace=True)
@@ -454,13 +473,13 @@ class experiments:
             df_fold=pd.DataFrame({'r2':metrics_list[0],'r':metrics_list[1],'MAE':metrics_list[2],'MSE':metrics_list[3],'RMSE':metrics_list[4],'fold':metrics_list[5],'r2_fold':r2_fold,'seed':i})
             
 
-            return df_fold,df_bootstrapping
+            return df_fold,df_bootstrapping,importance_df
         
-        metrics_,boot_results=zip(*Parallel(n_jobs=self.n_jobs)(delayed(func)(i) for i in tqdm.tqdm(range(self.iterations))))
+        metrics_,boot_results,importance_results=zip(*Parallel(n_jobs=self.n_jobs)(delayed(func)(i) for i in tqdm.tqdm(range(self.iterations),desc='Iteration:')))
         df_=pd.concat(metrics_)
         df_results_boot=pd.concat(boot_results)
-
-        return df_,df_results_boot
+        df_importance=pd.concat(importance_results)
+        return df_,df_results_boot,df_importance
 
     def learning_curve(self,df):
 

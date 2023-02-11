@@ -3,11 +3,13 @@ Cross-val
 Stratified
 Iterations 100
 Bootstrapping in test partition: 10 iterations
+audio_input:speech
 Features: egemaps+sr
 
 Filters: manual annotations no music 
 
 """
+from curses.panel import top_panel
 from itertools import product
 import glob 
 import os,sys
@@ -24,7 +26,7 @@ results_path = os.path.join('results',exp_name)
 labels_path='data/labels/final_labels.csv'
 labels_df=pd.read_csv(labels_path)
 
-label_tags=['agreeableness']
+label_tags=['neuroticism']
 
 random=False
 
@@ -37,7 +39,7 @@ features=[os.path.join(data_path,i) for i in feature_list]
 
 feature_df=pd.read_csv(features[0])
 
-speech_ratio=False
+speech_ratio=True
 
 if speech_ratio:
     feature_df=pd.merge(feature_df,labels_df[['filename','speech_ratio']],left_on='Name',right_on='filename').drop(columns='filename')
@@ -60,7 +62,12 @@ iterations=10
 
 # Bootstrapping 
 
-n_bootstrap=5
+n_bootstrap=0
+
+# Feature importance 
+
+feature_importance=True
+top_n=10
 
 # Modeling
 

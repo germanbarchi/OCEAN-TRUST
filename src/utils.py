@@ -3,6 +3,9 @@ import numpy as np
 import tqdm
 from IPython import embed
 from tqdm.notebook import tqdm
+import warnings
+
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 def concat_df(DF_features,DF_labels):
 
@@ -124,7 +127,7 @@ class make_partitions:
             dist = {k: len(v) * np.array(partitions) for k, v in groups}
             part = {k: np.zeros(n_sets) for k, v in groups}
 
-            for k, g in tqdm(df.groupby(independent_columns)):
+            for k, g in tqdm(df.groupby(independent_columns),desc='Creating stratified folds'):
                 diffs = []
                 for i, r in g.iterrows():
                     group = tuple(r[stratify_columns].to_list())

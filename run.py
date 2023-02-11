@@ -17,10 +17,13 @@ def main (exp_dict):
         print(method)
         configs=importlib.import_module(experiment)
 
-        exp=experiments(configs.feature_tags,configs.label_tags,n_folds=5,iterations=configs.iterations,stratify=configs.stratify,rf_n_jobs=configs.rf_n_jobs,n_jobs=configs.n_jobs,n_samples=configs.n_samples,seed=configs.seed,n_bootstrap=configs.n_bootstrap,random=configs.random) 
+        exp=experiments(configs.feature_tags,configs.label_tags,n_folds=5,iterations=configs.iterations,
+        stratify=configs.stratify,rf_n_jobs=configs.rf_n_jobs,n_jobs=configs.n_jobs,n_samples=configs.n_samples,
+        seed=configs.seed,n_bootstrap=configs.n_bootstrap,random=configs.random,feature_importance=configs.feature_importance,top_n=configs.top_n) 
         
         dfs=[]
         dfs_boot=[]
+        df_importance=[]
 
         for i, (feat,filter) in tqdm.tqdm(enumerate(configs.features_and_filters)):
             
@@ -33,20 +36,30 @@ def main (exp_dict):
 
             #df=normalize_data(df,feature_tags)
 
-            df,df_boot=exp.__getattribute__(method)(df)
+            df,df_boot,importance=exp.__getattribute__(method)(df)
             
             features_name=Path(feat).stem
             filter_name=Path(filter).stem
             
             df['filter']=filter_name
             df['feature']=features_name
-            dfs.append(df)
-            df_out=pd.concat(dfs).reset_index(drop=True)  
+            dfs.append(df)  
 
             if len(configs.label_tags)==5:
                 trait='All'
             else:
                 trait=configs.label_tags[0]
+
+            df_out=pd.concat(dfs).reset_index(drop=True)
+            df_out.loc[:,'trait']=trait            
+            df_out.to_csv(os.path.join(configs.results_path,'results.csv'))
+
+            if configs.feature_importance:
+                importance['filter']=filter_name
+                importance['feature']=features_name
+                df_importance.append(importance)
+                df_importance_out=pd.concat(df_importance)
+                df_importance_out.to_csv(os.path.join(configs.results_path,'results_importance.csv'))
 
             if not configs.n_bootstrap==0: 
                 df_boot['filter']=filter_name
@@ -56,9 +69,6 @@ def main (exp_dict):
                 
                 dfs_boot_out.loc[:,'trait']=trait
                 dfs_boot_out.to_csv(os.path.join(configs.results_path,'results_bootstrapping.csv'))
-
-            df_out.loc[:,'trait']=trait            
-            df_out.to_csv(os.path.join(configs.results_path,'results.csv'))
             
 if __name__=='__main__':
 
@@ -71,7 +81,7 @@ if __name__=='__main__':
     #else:
     #    config_file='individual_experiments.JSON'
         
-    config_file='individual_experiment.JSON'
+    config_file='experiments.JSON'
     with open (config_file) as jsonfile:
         experiment_dict=json.load(jsonfile)
 
