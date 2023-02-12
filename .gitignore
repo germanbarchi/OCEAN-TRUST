@@ -28,6 +28,9 @@ strat/strat/first_impressions_parts
 data/labels/
 data/features/features_duration/
 data/features/features_duration_sr/
+data/features/features_duration_sr_fixed/
+data/features/pyaudio_features/
+data/features/wav2vec_features/
 
 figures/
 
