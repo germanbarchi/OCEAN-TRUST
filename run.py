@@ -8,7 +8,14 @@ from src.utils import format_data
 from src.utils import normalize_data
 from src.modeling import experiments
 
-sys.path.append('./configs')
+sys.path.append('./configs/paper')
+
+def bool_eval(flag):
+    if flag=='True':
+        out=True
+    else:
+        out=False    
+    return out 
 
 def main (exp_dict):
 
@@ -76,12 +83,11 @@ if __name__=='__main__':
     argparser.add_argument('--multiple',help='True to run multiple experiments', type= bool, default=False)
     args=vars(argparser.parse_args())
     
-    #if args['multiple']:
-    #    config_file='experiments.JSON'
-    #else:
-    #    config_file='individual_experiments.JSON'
+    if bool_eval(args['multiple']):
+        config_file='experiments.JSON'
+    else:
+        config_file='individual_experiment.JSON'
         
-    config_file='experiments.JSON'
     with open (config_file) as jsonfile:
         experiment_dict=json.load(jsonfile)
 
