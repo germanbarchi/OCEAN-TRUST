@@ -17,7 +17,7 @@ import pandas as pd
 
 # Global
 exp_name=os.path.basename(__file__).split('.')[0]
-results_path = os.path.join('results',exp_name)
+results_path = os.path.join('results/paper',exp_name)
 
 # Data
 
@@ -26,14 +26,14 @@ results_path = os.path.join('results',exp_name)
 labels_path='data/labels/final_labels.csv'
 labels_df=pd.read_csv(labels_path)
 
-label_tags=['conscientiousness']
+label_tags=['neuroticism']
 
 random=False
 
 # Features
 
-data_path = 'data/features'
-feature_list=['new_partitions-egemaps_silero_speech.csv']
+data_path = 'data/features/paper/egemaps'
+feature_list=['egemaps_speech.csv']
 
 features=[os.path.join(data_path,i) for i in feature_list]
 
