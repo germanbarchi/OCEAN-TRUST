@@ -1,0 +1,9 @@
+Compute features
+
+bash data/features/paper/generate_egemaps.sh
+
+bash data/features/paper/generate_egemaps_duration.sh
+
+cd data/features/paper
+
+python generate_wav2vec_features.py

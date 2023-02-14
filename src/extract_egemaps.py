@@ -10,11 +10,18 @@ import tqdm
 from IPython import embed
 import random
 
-sys.path.append('../../silero_VAD')
+sys.path.append('silero_VAD')
 
 import silero
 
 from joblib import Parallel,delayed
+
+def bool_eval(flag):
+    if flag=='True':
+        out=True
+    else:
+        out=False    
+    return out 
 
 def return_names(file_paths):
     split_path=file_paths.split('/')
@@ -78,9 +85,8 @@ def extract_features(file_path,features_path,duration=0,random_sampling=False,no
         file_tag, partition=return_names(file_path)             
         signal=librosa.core.load(file_path,sr=FS)[0]
 
-        print(file_tag)
-
         if normalize:
+            
             if norm_method=='p95':
                 signal=p95_normalization(signal)
             elif norm_method=='min_max':    
@@ -103,6 +109,8 @@ def extract_features(file_path,features_path,duration=0,random_sampling=False,no
                 functionals=pd.DataFrame()
         else:
             functionals=smile(signal,FS)
+            start=0
+            end=int(duration*FS)-1
 
         if not functionals.empty:    
             functionals['Part']=partition
@@ -124,16 +132,17 @@ if __name__ == '__main__':
     argparser.add_argument('--files_path',help='Files directory')
     argparser.add_argument('--duration',help='Audio duration (seconds). Audio will be trimmed at t=duration)',default=0)
     argparser.add_argument('--random_sampling',help='extract random audio fragments of length <duration>',default=False)
-    argparser.add_argument('--normalize',help='If True, normalization will be applied. Default method is percentile 95')
-    argparser.add_argument('--norm_method',help='select <p95> or <min_max>')
-    argparser.add_argument('--blacklist',help='blacklist text files containing samples names to be removed')
+    argparser.add_argument('--normalize',help='If True, normalization will be applied. Default method is percentile 95',default=False)
+    argparser.add_argument('--norm_method',help='select <p95> or <min_max>',default='p95')
+    argparser.add_argument('--blacklist',help='blacklist text files containing samples names to be removed',default=[])
     argparser.add_argument('--speech_ratio',help='enables speech ratio computing',default=False)
+    argparser.add_argument('--n_jobs',help='multiplocessing threads',default=1)
     args=vars(argparser.parse_args())
 
     files_path_=glob.glob(os.path.join(args['files_path'],'*/*.wav'))
 
     df,ommit,b_list=check_data(args['features_path'],blacklist_dir=args['blacklist'])    
 
-    Parallel(n_jobs=4)(delayed(extract_features)(
-    file_path,args['features_path'],duration=int(args['duration']),random_sampling=args['random_sampling'],normalize=args['normalize'],
-    norm_method=args['norm_method'],speech_ratio_option=args['speech_ratio'],ommit_samples=ommit,blacklist=b_list) for file_path in tqdm.tqdm(files_path_))
+    Parallel(n_jobs=int(args['n_jobs']))(delayed(extract_features)(
+    file_path,args['features_path'],duration=int(args['duration']),random_sampling=bool_eval(args['random_sampling']),normalize=bool_eval(args['normalize']),
+    norm_method=args['norm_method'],speech_ratio_option=bool_eval(args['speech_ratio']),ommit_samples=ommit,blacklist=b_list) for file_path in tqdm.tqdm(files_path_))
