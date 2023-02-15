@@ -3,13 +3,11 @@ Cross-val
 Stratified
 Iterations 100
 Bootstrapping in test partition: 10 iterations
-audio_input:speech
 Features: egemaps+sr
 
 Filters: manual annotations no music 
 
 """
-from curses.panel import top_panel
 from itertools import product
 import glob 
 import os,sys
@@ -26,7 +24,7 @@ results_path = os.path.join('results/paper',exp_name)
 labels_path='data/labels/final_labels.csv'
 labels_df=pd.read_csv(labels_path)
 
-label_tags=['agreeableness']
+label_tags=['neuroticism']
 
 random=False
 
@@ -39,12 +37,12 @@ features=[os.path.join(data_path,i) for i in feature_list]
 
 feature_df=pd.read_csv(features[0])
 
-speech_ratio=True
+speech_ratio=False
 
 if speech_ratio:
     feature_df=pd.merge(feature_df,labels_df[['filename','speech_ratio']],left_on='Name',right_on='filename').drop(columns='filename')
 
-feature_tags=feature_df.columns[~feature_df.columns.isin(['Name','Part','start','end'])]
+feature_tags=feature_df.columns[~feature_df.columns.isin(['Name','Part'])]
 
 # Subset Lists
 
@@ -58,16 +56,11 @@ lists=[os.path.join(lists_path,j) for j in lists_]
 n_samples=None # number of samples to create subset or 'None' to use all data 
 
 stratify=True
-iterations=10
+iterations=100
 
 # Bootstrapping 
 
-n_bootstrap=0
-
-# Feature importance 
-
-feature_importance=True
-top_n=10
+n_bootstrap=10
 
 # Modeling
 

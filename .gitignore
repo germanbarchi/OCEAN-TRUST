@@ -12,7 +12,6 @@ data/silero/
 data/no_speech_audios
 data/manual_music_annotations/audio/ 
 
-
 yamnet/
 
 results/
@@ -25,9 +24,10 @@ strat/strat/first_impressions_parts-no_speech_subset-20_groups-5_folds.csv
 strat/strat/first_impressions_parts-no_speech_subset-200_groups-5_folds.csv
 strat/strat/first_impressions_parts
 
-data/labels/
+data/labels/*
 !data/labels/final_labels.csv
-!data/labels/labels_first_impressions.json
+!data/labels/create_labels_dict_json.py
+
 
 data/features/experimental/
 data/features/paper/egemaps/

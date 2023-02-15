@@ -44,7 +44,7 @@ speech_ratio=True
 if speech_ratio:
     feature_df=pd.merge(feature_df,labels_df[['filename','speech_ratio']],left_on='Name',right_on='filename').drop(columns='filename')
 
-feature_tags=feature_df.columns[~feature_df.columns.isin(['Name','Part'])]
+feature_tags=feature_df.columns[~feature_df.columns.isin(['Name','Part','start','end'])]
 
 # Subset Lists
 

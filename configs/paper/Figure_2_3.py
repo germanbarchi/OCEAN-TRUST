@@ -40,7 +40,7 @@ features=[os.path.join(data_path,i) for i in feature_list]
 
 feature_df=pd.read_csv(features[0])
 
-feature_tags=feature_df.columns[~feature_df.columns.isin(['Name','Part'])]
+ffeature_tags=feature_df.columns[~feature_df.columns.isin(['Name','Part','start','end'])]
 
 # Subset Lists
 
@@ -55,6 +55,11 @@ n_samples=None   # number of samples to create subset or 'None' to use all data
 
 stratify=True
 iterations=100
+
+# Feature importance 
+
+feature_importance=False
+top_n=10
 
 # Bootstrapping 
 

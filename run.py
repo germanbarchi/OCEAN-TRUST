@@ -80,7 +80,7 @@ def main (exp_dict):
 if __name__=='__main__':
 
     argparser=argparse.ArgumentParser(description='Run experiments')
-    argparser.add_argument('--multiple',help='True to run multiple experiments', type= bool, default=False)
+    argparser.add_argument('--multiple',help='True to run multiple experiments',default=False)
     args=vars(argparser.parse_args())
     
     if bool_eval(args['multiple']):

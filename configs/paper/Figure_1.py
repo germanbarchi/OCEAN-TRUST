@@ -57,6 +57,11 @@ n_samples=1000
 stratify=True
 iterations=100
 
+# Feature importance 
+
+feature_importance=False
+top_n=10
+
 # Bootstrapping 
 
 n_bootstrap=5

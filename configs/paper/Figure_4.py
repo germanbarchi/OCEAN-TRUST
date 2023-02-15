@@ -48,8 +48,7 @@ speech_ratio=False
 if speech_ratio:
     feature_df=pd.merge(feature_df,labels_df[['filename','speech_ratio']],left_on='Name',right_on='filename').drop(columns='filename')
 
-feature_tags=feature_df.columns[~feature_df.columns.isin(['Name','Part'])]
-
+feature_tags=feature_df.columns[~feature_df.columns.isin(['Name','Part','start','end'])]
 # Subset Lists
 
 lists_path='data/lists'
@@ -65,6 +64,11 @@ stratify=True
 iterations=100
 
 n_bootstrap=10
+
+# Feature importance 
+
+feature_importance=False
+top_n=10
 
 # Modeling
 

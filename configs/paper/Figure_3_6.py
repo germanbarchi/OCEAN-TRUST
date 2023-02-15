@@ -3,13 +3,11 @@ Cross-val
 Stratified
 Iterations 100
 Bootstrapping in test partition: 10 iterations
-audio_input:speech
 Features: egemaps+sr
 
 Filters: manual annotations no music 
 
 """
-from curses.panel import top_panel
 from itertools import product
 import glob 
 import os,sys
@@ -26,7 +24,7 @@ results_path = os.path.join('results/paper',exp_name)
 labels_path='data/labels/final_labels.csv'
 labels_df=pd.read_csv(labels_path)
 
-label_tags=['agreeableness']
+label_tags=['extraversion', 'neuroticism','agreeableness', 'conscientiousness', 'openness']
 
 random=False
 
@@ -58,16 +56,16 @@ lists=[os.path.join(lists_path,j) for j in lists_]
 n_samples=None # number of samples to create subset or 'None' to use all data 
 
 stratify=True
-iterations=10
-
-# Bootstrapping 
-
-n_bootstrap=0
+iterations=100
 
 # Feature importance 
 
-feature_importance=True
+feature_importance=False
 top_n=10
+
+# Bootstrapping 
+
+n_bootstrap=10
 
 # Modeling
 

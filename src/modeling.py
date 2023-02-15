@@ -332,7 +332,12 @@ def train_model(df_train,feature_tags,label_tags,seed,rf_n_jobs=None,random=Fals
     if random:
         Y_train=Y_train.sample(frac=1,replace=True)
 
-    RF_reg.fit(X_train.values,Y_train.values.reshape(Y_train.shape[0],))
+    if Y_train.shape[1]==1:
+        Y_train=Y_train.values.reshape((Y_train.shape[0],))
+    else:
+        Y_train=Y_train.values
+
+    RF_reg.fit(X_train.values,Y_train)
  
     return RF_reg
 
@@ -349,13 +354,27 @@ def predict(RF_reg, val,feature_tags,label_tags):
 
     predictions=RF_reg.predict(X_val.values)
 
-    r2=r2_score(Y_val, predictions)    
+    return predictions, Y_val
 
+def metrics_all(Y_val, predictions):
+
+    r2_all=r2_score(Y_val, predictions)
     MAE=mean_absolute_error(Y_val, predictions)
     MSE=mean_squared_error(Y_val, predictions)
     RMSE=np.sqrt(mean_squared_error(Y_val, predictions))
+    
+    return r2_all,MAE,MSE,RMSE
 
-    return r2,MAE,MSE,RMSE,Y_val,predictions
+def individual_metrics(Y_val, predictions):
+
+    r2_e=r2_score(Y_val['extraversion'],predictions[:,0])
+    r2_n=r2_score(Y_val['neuroticism'],predictions[:,1])
+    r2_a=r2_score(Y_val['agreeableness'],predictions[:,2])
+    r2_c=r2_score(Y_val['conscientiousness'],predictions[:,3])
+    r2_o=r2_score(Y_val['openness'],predictions[:,4])
+
+    return r2_o,r2_c,r2_e,r2_a,r2_n
+
 
 def create_importance_p95(importance_data,feature_tags):
     
@@ -398,6 +417,7 @@ class experiments:
         self.feature_importance=feature_importance
         self.top_n=top_n
     
+    
     def cross_val(self,df): 
 
         df_bootstrapping=pd.DataFrame([])
@@ -436,7 +456,10 @@ class experiments:
                 df_train=df_final[~df_final['basename'].isin(df_val.basename)]
                 RF_reg= train_model (df_train,self.feature_tags,self.label_tags,self.seed,rf_n_jobs=self.rf_n_jobs,random=self.random)
                         
-                r2_all,MAE_all,MSE_all,RMSE_all,y_val,predictions= predict(RF_reg,df_val,self.feature_tags,self.label_tags)
+                predictions,y_val= predict(RF_reg,df_val,self.feature_tags,self.label_tags)             
+                
+                r2_all,MAE_all,MSE_all,RMSE_all=metrics_all(y_val,predictions)
+
                 metrics=[r2_all,np.sqrt(r2_all),MAE_all,MSE_all,RMSE_all,fold]
                 metrics_list.append(metrics)
                 predictions=pd.DataFrame(predictions)
@@ -462,7 +485,7 @@ class experiments:
                         y_preds_shufle=final_df_.loc[:,~final_df.columns.isin(self.label_tags)]
                         r2_boot=r2_score(y_val_shufle,y_preds_shufle)
                         r2_bootstrap.append(r2_boot)
-                    print(r2_bootstrap)
+                    
                     df_boot=pd.DataFrame({'r2_boot_values':r2_bootstrap,'n_boot':list(np.arange(self.n_bootstrap))})
                     df_boot.loc[:,'seed']=i
                     df_boot.loc[:,'fold']=fold
@@ -472,6 +495,121 @@ class experiments:
             metrics_list=np.transpose(metrics_list)
             df_fold=pd.DataFrame({'r2':metrics_list[0],'r':metrics_list[1],'MAE':metrics_list[2],'MSE':metrics_list[3],'RMSE':metrics_list[4],'fold':metrics_list[5],'r2_fold':r2_fold,'seed':i})
             
+
+            return df_fold,df_bootstrapping,importance_df
+        
+        metrics_,boot_results,importance_results=zip(*Parallel(n_jobs=self.n_jobs)(delayed(func)(i) for i in tqdm.tqdm(range(self.iterations),desc='Iteration:')))
+        df_=pd.concat(metrics_)
+        df_results_boot=pd.concat(boot_results)
+        df_importance=pd.concat(importance_results)
+        return df_,df_results_boot,df_importance
+    
+    
+    def cross_val_multiple(self,df): 
+
+        df_bootstrapping=pd.DataFrame([])
+        importance_df=pd.DataFrame([])
+
+        def func(i):
+            
+            nonlocal df_bootstrapping
+            nonlocal importance_df
+
+            partition=make_partitions(self.n_folds)
+
+            metrics_list=[]
+            predictions_all=pd.DataFrame([])
+            
+            y_val_all=pd.DataFrame()
+            
+            # sample subset of size equal to number of samples containing music (minimum subset)
+
+            if not self.n_samples==None:
+                df_subset=df.sample(n=self.n_samples,replace=False)  # df cannot be overwritten because of parallel computation
+            else:
+                df_subset=df  
+
+            # Partitioning options
+
+            if self.stratify: 
+                df_final=partition.make_strat_folds(df_subset) #se puede agregar random_seed
+            else:
+                df_final=partition.make_folds_by_id(df_subset)
+
+            # Run cross Val
+
+            for fold in tqdm.tqdm(range(self.n_folds),desc='Training on folds'):
+                df_val=df_final[df_final['fold']==float(fold)]
+                df_train=df_final[~df_final['basename'].isin(df_val.basename)]
+                
+                RF_reg= train_model (df_train,self.feature_tags,self.label_tags,self.seed,rf_n_jobs=self.rf_n_jobs,random=self.random)
+                        
+                predictions,y_val= predict(RF_reg,df_val,self.feature_tags,self.label_tags)             
+                
+                r2_all,MAE_all,MSE_all,RMSE_all=metrics_all(y_val,predictions)
+                
+                r2_o,r2_c,r2_e,r2_a,r2_n=individual_metrics(y_val,predictions)
+
+                metrics=[r2_all,np.sqrt(r2_all),MAE_all,MSE_all,RMSE_all,r2_o,r2_c,r2_e,r2_a,r2_n,fold]
+                metrics_list.append(metrics)
+                       
+                predictions=pd.DataFrame(predictions)
+                
+                predictions_all=pd.concat([predictions_all,predictions],ignore_index=True)                
+                y_val_all=pd.concat([y_val_all,y_val])           
+                
+                # Compute feature importance for each fold                
+                if self.feature_importance:    
+                    importance=top_feature_importance(RF_reg.feature_importances_,self.feature_tags,self.top_n)                
+                    importance.loc[:,'fold']=fold
+                    importance.loc[:,'seed']=i
+                    importance_df=pd.concat([importance_df,importance])
+                
+                if not self.n_bootstrap==0:                    
+                    r2_bootstrap=[]
+                    r2_bootstrap_o=[]
+                    r2_bootstrap_c=[]
+                    r2_bootstrap_e=[]
+                    r2_bootstrap_a=[]
+                    r2_bootstrap_n=[]                 
+                    for n_boot in tqdm.tqdm(range(self.n_bootstrap),desc='Boostrapping'):                                     
+                        
+                        final_df=y_val_all.reset_index(drop=True).join(predictions_all)
+                        final_df_=final_df.sample(n=y_val_all.shape[0],replace=True)
+                        
+                        y_val_shufle=final_df_[self.label_tags]
+                        y_preds_shufle=final_df_.loc[:,~final_df.columns.isin(self.label_tags)]
+                        r2_boot=r2_score(y_val_shufle,y_preds_shufle)
+                        r2_boot_e=r2_score(y_val_shufle['extraversion'],y_preds_shufle[0])
+                        r2_boot_n=r2_score(y_val_shufle['neuroticism'],y_preds_shufle[1])
+                        r2_boot_a=r2_score(y_val_shufle['agreeableness'],y_preds_shufle[2])
+                        r2_boot_c=r2_score(y_val_shufle['conscientiousness'],y_preds_shufle[3])
+                        r2_boot_o=r2_score(y_val_shufle['openness'],y_preds_shufle[4])
+                        r2_bootstrap_o.append(r2_boot_o)
+                        r2_bootstrap_c.append(r2_boot_c)
+                        r2_bootstrap_e.append(r2_boot_e)
+                        r2_bootstrap_a.append(r2_boot_a)
+                        r2_bootstrap_n.append(r2_boot_n)
+                        r2_bootstrap.append(r2_boot)
+                    
+                    df_boot=pd.DataFrame({'r2_boot_values':r2_bootstrap,'r2_boot_o':r2_bootstrap_o,'r2_boot_c':r2_bootstrap_c,
+                    'r2_boot_e':r2_bootstrap_e,'r2_boot_a':r2_bootstrap_a,'r2_boot_n':r2_bootstrap_n,'n_boot':list(np.arange(self.n_bootstrap))})
+                    df_boot.loc[:,'seed']=i
+                    df_boot.loc[:,'fold']=fold
+                    df_bootstrapping=pd.concat([df_bootstrapping,df_boot])
+
+            r2_fold=r2_score(y_val_all, predictions_all)
+            r2_fold_e=r2_score(y_val_all['extraversion'],predictions_all[0])
+            r2_fold_n=r2_score(y_val_all['neuroticism'],predictions_all[1])
+            r2_fold_a=r2_score(y_val_all['agreeableness'],predictions_all[2])
+            r2_fold_c=r2_score(y_val_all['conscientiousness'],predictions_all[3])
+            r2_fold_o=r2_score(y_val_all['openness'],predictions_all[4])  
+
+            metrics_list=np.transpose(metrics_list)
+            df_fold=pd.DataFrame({'r2':metrics_list[0],'r':metrics_list[1],'MAE':metrics_list[2],'MSE':metrics_list[3],'RMSE':metrics_list[4],
+            'r2_o':metrics_list[5],'r2_c':metrics_list[6],'r2_e':metrics_list[7],'r2_a':metrics_list[8],'r2_n':metrics_list[9],'r2_fold_all':r2_fold,
+            'r2_fold_o':r2_fold_o,'r2_fold_c':r2_fold_c,'r2_fold_e':r2_fold_e,'r2_fold_a':r2_fold_a,'r2_fold_n':r2_fold_n,'fold':metrics_list[10],
+            'seed':i})            
 
             return df_fold,df_bootstrapping,importance_df
         
