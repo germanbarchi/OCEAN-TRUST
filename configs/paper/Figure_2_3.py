@@ -23,7 +23,7 @@ results_path = os.path.join('results/paper',exp_name)
 
 # Labels
 
-labels_path='data/labels/final_labels.csv'
+labels_path='data/labels/final_labels+speech_ratio.csv'
 labels_df=pd.read_csv(labels_path)
 
 label_tags=['extraversion', 'neuroticism','agreeableness', 'conscientiousness', 'openness']
@@ -40,7 +40,7 @@ features=[os.path.join(data_path,i) for i in feature_list]
 
 feature_df=pd.read_csv(features[0])
 
-ffeature_tags=feature_df.columns[~feature_df.columns.isin(['Name','Part','start','end'])]
+feature_tags=feature_df.columns[~feature_df.columns.isin(['Name','Part','start','end'])]
 
 # Subset Lists
 

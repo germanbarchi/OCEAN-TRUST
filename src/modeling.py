@@ -19,6 +19,7 @@ import sys
 sys.path.append('../src')
 
 from src.utils import make_partitions
+from itertools import combinations
 
 def cross_val_5_folds(df,n_train,n_val,feature_tags,label_tags,seed):
     
@@ -399,6 +400,26 @@ def top_feature_importance(importance,features,top_n):
 
     return df
 
+def make_combinations(dict_features):
+    list_final=[]
+    feature_names=dict_features.keys()
+
+    for i in range(1,len(feature_names)):
+        c=list(combinations(feature_names,i))
+        list_final.extend(c)
+        
+    final_dict={}
+    for combination in list_final:        
+        iteration=[]
+        label=''
+        for subgroup in combination:
+            label=label+'+'+subgroup
+            iteration.extend(dict_features[subgroup])
+        final_dict.update({label[1:]:iteration})    
+
+    return final_dict
+
+
 class experiments:
 
     def __init__(self,feature_tags,label_tags,n_folds=5,iterations=10,stratify=False,
@@ -416,6 +437,7 @@ class experiments:
         self.random=random
         self.feature_importance=feature_importance
         self.top_n=top_n
+        self.multi_feature_eval
     
     
     def cross_val(self,df): 
@@ -431,9 +453,11 @@ class experiments:
             partition=make_partitions(self.n_folds)
 
             metrics_list=[]
-            predictions_all=pd.DataFrame([])
-            
+            predictions_all=pd.DataFrame([])            
             y_val_all=pd.DataFrame()
+            df_boot_out=pd.DataFrame([])
+            df_out=pd.DataFrame([])
+            df_importance_out=pd.DataFrame([])
             
             # sample subset of size equal to number of samples containing music (minimum subset)
 
@@ -449,61 +473,74 @@ class experiments:
             else:
                 df_final=partition.make_folds_by_id(df_subset)
 
+            # Evaluate in multiple feature combinations
+
+            if self.multi_feature_eval: 
+                self.label_tags=make_combinations(self.label_tags)
+
             # Run cross Val
 
-            for fold in tqdm.tqdm(range(self.n_folds),desc='Training on folds'):
-                df_val=df_final[df_final['fold']==float(fold)]
-                df_train=df_final[~df_final['basename'].isin(df_val.basename)]
-                RF_reg= train_model (df_train,self.feature_tags,self.label_tags,self.seed,rf_n_jobs=self.rf_n_jobs,random=self.random)
-                        
-                predictions,y_val= predict(RF_reg,df_val,self.feature_tags,self.label_tags)             
-                
-                r2_all,MAE_all,MSE_all,RMSE_all=metrics_all(y_val,predictions)
+            for feature_tag,labels in self.label_tags.items():
 
-                metrics=[r2_all,np.sqrt(r2_all),MAE_all,MSE_all,RMSE_all,fold]
-                metrics_list.append(metrics)
-                predictions=pd.DataFrame(predictions)
-                predictions_all=pd.concat([predictions_all,predictions],ignore_index=True)
-                y_val_all=pd.concat([y_val_all,y_val])
-
-                # Compute feature importance for each fold                
-                if self.feature_importance:    
-                    importance=top_feature_importance(RF_reg.feature_importances_,self.feature_tags,self.top_n)                
-                    importance.loc[:,'fold']=fold
-                    importance.loc[:,'seed']=i
-                    importance_df=pd.concat([importance_df,importance])
-                
-                if not self.n_bootstrap==0:
+                for fold in tqdm.tqdm(range(self.n_folds),desc='Training on folds'):
+                    df_val=df_final[df_final['fold']==float(fold)]
+                    df_train=df_final[~df_final['basename'].isin(df_val.basename)]
+                    RF_reg= train_model (df_train,self.feature_tags,labels,self.seed,rf_n_jobs=self.rf_n_jobs,random=self.random)
+                            
+                    predictions,y_val= predict(RF_reg,df_val,self.feature_tags,labels)             
                     
-                    r2_bootstrap=[]                 
-                    for n_boot in tqdm.tqdm(range(self.n_bootstrap),desc='Boostrapping'):                                       
-                        
-                        final_df=y_val_all.reset_index(drop=True).join(predictions_all)
-                        final_df_=final_df.sample(n=y_val_all.shape[0],replace=True)
-                        
-                        y_val_shufle=final_df_[self.label_tags]
-                        y_preds_shufle=final_df_.loc[:,~final_df.columns.isin(self.label_tags)]
-                        r2_boot=r2_score(y_val_shufle,y_preds_shufle)
-                        r2_bootstrap.append(r2_boot)
-                    
-                    df_boot=pd.DataFrame({'r2_boot_values':r2_bootstrap,'n_boot':list(np.arange(self.n_bootstrap))})
-                    df_boot.loc[:,'seed']=i
-                    df_boot.loc[:,'fold']=fold
-                    df_bootstrapping=pd.concat([df_bootstrapping,df_boot])
+                    r2_all,MAE_all,MSE_all,RMSE_all=metrics_all(y_val,predictions)
 
-            r2_fold=r2_score(y_val_all, predictions_all)
-            metrics_list=np.transpose(metrics_list)
-            df_fold=pd.DataFrame({'r2':metrics_list[0],'r':metrics_list[1],'MAE':metrics_list[2],'MSE':metrics_list[3],'RMSE':metrics_list[4],'fold':metrics_list[5],'r2_fold':r2_fold,'seed':i})
+                    metrics=[r2_all,np.sqrt(r2_all),MAE_all,MSE_all,RMSE_all,fold]
+                    metrics_list.append(metrics)
+                    predictions=pd.DataFrame(predictions)
+                    predictions_all=pd.concat([predictions_all,predictions],ignore_index=True)
+                    y_val_all=pd.concat([y_val_all,y_val])
+
+                    # Compute feature importance for each fold                
+                    if self.feature_importance:    
+                        importance=top_feature_importance(RF_reg.feature_importances_,self.feature_tags,self.top_n)                
+                        importance.loc[:,'fold']=fold
+                        importance.loc[:,'seed']=i
+                        importance.loc[:,'feature']=feature_tag
+                        importance_df=pd.concat([importance_df,importance])
+                    
+                    if not self.n_bootstrap==0:
+                        
+                        r2_bootstrap=[]                 
+                        for n_boot in tqdm.tqdm(range(self.n_bootstrap),desc='Boostrapping'):                                       
+                            
+                            final_df=y_val_all.reset_index(drop=True).join(predictions_all)
+                            final_df_=final_df.sample(n=y_val_all.shape[0],replace=True)
+                            
+                            y_val_shufle=final_df_[labels]
+                            y_preds_shufle=final_df_.loc[:,~final_df.columns.isin(labels)]
+                            r2_boot=r2_score(y_val_shufle,y_preds_shufle)
+                            r2_bootstrap.append(r2_boot)
+                        
+                        df_boot=pd.DataFrame({'r2_boot_values':r2_bootstrap,'n_boot':list(np.arange(self.n_bootstrap))})
+                        df_boot.loc[:,'seed']=i
+                        df_boot.loc[:,'fold']=fold
+                        df_boot.loc[:,'feature']=feature_tag
+                        df_bootstrapping=pd.concat([df_bootstrapping,df_boot])
+
+                r2_fold=r2_score(y_val_all, predictions_all)
+                metrics_list=np.transpose(metrics_list)
+                df_fold=pd.DataFrame({'r2':metrics_list[0],'r':metrics_list[1],'MAE':metrics_list[2],'MSE':metrics_list[3],'RMSE':metrics_list[4],
+                'fold':metrics_list[5],'r2_fold':r2_fold,'seed':i,'feature':feature_tag})
             
-
-            return df_fold,df_bootstrapping,importance_df
+                df_out=pd.concat([df_out,df_fold])
+                df_boot_out=pd.concat([df_boot_out,df_bootstrapping])
+                df_importance_out=pd.concat([df_importance_out,importance_df])
+            
+            return df_out,df_boot_out,df_importance_out
         
         metrics_,boot_results,importance_results=zip(*Parallel(n_jobs=self.n_jobs)(delayed(func)(i) for i in tqdm.tqdm(range(self.iterations),desc='Iteration:')))
         df_=pd.concat(metrics_)
         df_results_boot=pd.concat(boot_results)
         df_importance=pd.concat(importance_results)
+        
         return df_,df_results_boot,df_importance
-    
     
     def cross_val_multiple(self,df): 
 

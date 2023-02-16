@@ -8,6 +8,8 @@ from src.utils import format_data
 from src.utils import normalize_data
 from src.modeling import experiments
 
+from IPython import embed
+
 sys.path.append('./configs/paper')
 
 def bool_eval(flag):
@@ -26,7 +28,8 @@ def main (exp_dict):
 
         exp=experiments(configs.feature_tags,configs.label_tags,n_folds=5,iterations=configs.iterations,
         stratify=configs.stratify,rf_n_jobs=configs.rf_n_jobs,n_jobs=configs.n_jobs,n_samples=configs.n_samples,
-        seed=configs.seed,n_bootstrap=configs.n_bootstrap,random=configs.random,feature_importance=configs.feature_importance,top_n=configs.top_n) 
+        seed=configs.seed,n_bootstrap=configs.n_bootstrap,random=configs.random,feature_importance=configs.feature_importance,
+        top_n=configs.top_n,self_multi_feature_eval=configs.self_multi_feature_eval) 
         
         dfs=[]
         dfs_boot=[]
@@ -40,7 +43,7 @@ def main (exp_dict):
             feat_df=pd.read_csv(feat)        
         
             df=format_data(feat_df,configs.labels_df,filter)
-
+            
             #df=normalize_data(df,feature_tags)
 
             df,df_boot,importance=exp.__getattribute__(method)(df)
@@ -49,7 +52,8 @@ def main (exp_dict):
             filter_name=Path(filter).stem
             
             df['filter']=filter_name
-            df['feature']=features_name
+            #df['feature']=features_name.split('_')[0]
+            df['audio_type']=features_name.split('_')[1]
             dfs.append(df)  
 
             if len(configs.label_tags)==5:
@@ -63,14 +67,14 @@ def main (exp_dict):
 
             if configs.feature_importance:
                 importance['filter']=filter_name
-                importance['feature']=features_name
+                #importance['feature']=features_name
                 df_importance.append(importance)
                 df_importance_out=pd.concat(df_importance)
                 df_importance_out.to_csv(os.path.join(configs.results_path,'results_importance.csv'))
 
             if not configs.n_bootstrap==0: 
                 df_boot['filter']=filter_name
-                df_boot['feature']=features_name
+                #df_boot['feature']=features_name
                 dfs_boot.append(df_boot)
                 dfs_boot_out=pd.concat(dfs_boot).reset_index(drop=True)         
                 
