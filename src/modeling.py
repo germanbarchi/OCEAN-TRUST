@@ -419,11 +419,18 @@ def make_combinations(dict_features):
 
     return final_dict
 
+def create_individual_dict(dict_in):
+    dict_out={}
+    for key in dict_in.keys():
+        for val in dict_in[key]:
+            dict_out.update({val:[val]})
+    return dict_out
+
 
 class experiments:
 
     def __init__(self,feature_tags,label_tags,n_folds=5,iterations=10,stratify=False,
-    n_jobs=1,rf_n_jobs=1,n_samples=1,seed=None,n_bootstrap=0,random=False,feature_importance=False,top_n=5,multi_feature_eval=False):
+    n_jobs=1,rf_n_jobs=1,n_samples=1,seed=None,n_bootstrap=0,random=False,feature_importance=False,top_n=5,multi_feature_eval=False,individual_features=False):
         self.feature_tags=feature_tags
         self.label_tags=label_tags
         self.n_folds=n_folds
@@ -438,7 +445,7 @@ class experiments:
         self.feature_importance=feature_importance
         self.top_n=top_n
         self.multi_feature_eval=multi_feature_eval
-    
+        self.individual_features=individual_features
     
     def cross_val(self,df): 
 
@@ -467,6 +474,9 @@ class experiments:
 
             # Evaluate in multiple feature combinations
 
+            if self.individual_features:
+                self.feature_tags=create_individual_dict(self.feature_tags)
+                
             if self.multi_feature_eval: 
                 self.feature_tags=make_combinations(self.feature_tags)
                 
