@@ -29,7 +29,7 @@ def main (exp_dict):
         exp=experiments(configs.feature_tags,configs.label_tags,n_folds=5,iterations=configs.iterations,
         stratify=configs.stratify,rf_n_jobs=configs.rf_n_jobs,n_jobs=configs.n_jobs,n_samples=configs.n_samples,
         seed=configs.seed,n_bootstrap=configs.n_bootstrap,random=configs.random,feature_importance=configs.feature_importance,
-        top_n=configs.top_n,self_multi_feature_eval=configs.self_multi_feature_eval) 
+        top_n=configs.top_n,multi_feature_eval=configs.multi_feature_eval) 
         
         dfs=[]
         dfs_boot=[]

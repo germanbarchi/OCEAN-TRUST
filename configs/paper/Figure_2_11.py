@@ -38,8 +38,11 @@ feature_list=['egemaps_full_audio.csv',
 
 features=[os.path.join(data_path,i) for i in feature_list]
 
-subsets = {
-        'frequency' : [
+multi_feature_eval=True
+
+# feature tag format {<tag>:[<feature_label>]}
+
+feature_tags = {'sr':['speech_ratio'],'frequency' : [
             'F0semitoneFrom27.5Hz_sma3nz_amean',
             'F0semitoneFrom27.5Hz_sma3nz_stddevNorm',
             'F0semitoneFrom27.5Hz_sma3nz_percentile20.0',
@@ -158,7 +161,7 @@ lists=[os.path.join(lists_path,j) for j in lists_]
 n_samples=None # number of samples to create subset or 'None' to use all data 
 
 stratify=True
-iterations=100
+iterations=10
 
 # Feature importance 
 
@@ -167,7 +170,7 @@ top_n=10
 
 # Bootstrapping 
 
-n_bootstrap=10
+n_bootstrap=0
 
 # Modeling
 

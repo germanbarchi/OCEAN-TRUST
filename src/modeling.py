@@ -404,7 +404,7 @@ def make_combinations(dict_features):
     list_final=[]
     feature_names=dict_features.keys()
 
-    for i in range(1,len(feature_names)):
+    for i in range(1,len(feature_names)+1):
         c=list(combinations(feature_names,i))
         list_final.extend(c)
         
@@ -423,7 +423,7 @@ def make_combinations(dict_features):
 class experiments:
 
     def __init__(self,feature_tags,label_tags,n_folds=5,iterations=10,stratify=False,
-    n_jobs=1,rf_n_jobs=1,n_samples=1,seed=None,n_bootstrap=0,random=False,feature_importance=False,top_n=5):
+    n_jobs=1,rf_n_jobs=1,n_samples=1,seed=None,n_bootstrap=0,random=False,feature_importance=False,top_n=5,multi_feature_eval=False):
         self.feature_tags=feature_tags
         self.label_tags=label_tags
         self.n_folds=n_folds
@@ -437,24 +437,16 @@ class experiments:
         self.random=random
         self.feature_importance=feature_importance
         self.top_n=top_n
-        self.multi_feature_eval
+        self.multi_feature_eval=multi_feature_eval
     
     
     def cross_val(self,df): 
 
-        df_bootstrapping=pd.DataFrame([])
-        importance_df=pd.DataFrame([])
-
         def func(i):
             
-            nonlocal df_bootstrapping
-            nonlocal importance_df
-
             partition=make_partitions(self.n_folds)
-
-            metrics_list=[]
-            predictions_all=pd.DataFrame([])            
-            y_val_all=pd.DataFrame()
+            
+            metrics_list=[]         
             df_boot_out=pd.DataFrame([])
             df_out=pd.DataFrame([])
             df_importance_out=pd.DataFrame([])
@@ -476,18 +468,24 @@ class experiments:
             # Evaluate in multiple feature combinations
 
             if self.multi_feature_eval: 
-                self.label_tags=make_combinations(self.label_tags)
-
+                self.feature_tags=make_combinations(self.feature_tags)
+                
             # Run cross Val
 
-            for feature_tag,labels in self.label_tags.items():
-
+            for feature_tag,features in self.feature_tags.items():
+                
+                metrics_list=[]
+                y_val_all=pd.DataFrame()
+                predictions_all=pd.DataFrame([]) 
+                df_bootstrapping=pd.DataFrame([])
+                importance_df=pd.DataFrame([])  
+                
                 for fold in tqdm.tqdm(range(self.n_folds),desc='Training on folds'):
                     df_val=df_final[df_final['fold']==float(fold)]
                     df_train=df_final[~df_final['basename'].isin(df_val.basename)]
-                    RF_reg= train_model (df_train,self.feature_tags,labels,self.seed,rf_n_jobs=self.rf_n_jobs,random=self.random)
+                    RF_reg= train_model (df_train,features,self.label_tags,self.seed,rf_n_jobs=self.rf_n_jobs,random=self.random)
                             
-                    predictions,y_val= predict(RF_reg,df_val,self.feature_tags,labels)             
+                    predictions,y_val= predict(RF_reg,df_val,features,self.label_tags)             
                     
                     r2_all,MAE_all,MSE_all,RMSE_all=metrics_all(y_val,predictions)
 
@@ -499,7 +497,7 @@ class experiments:
 
                     # Compute feature importance for each fold                
                     if self.feature_importance:    
-                        importance=top_feature_importance(RF_reg.feature_importances_,self.feature_tags,self.top_n)                
+                        importance=top_feature_importance(RF_reg.feature_importances_,features,self.top_n)                
                         importance.loc[:,'fold']=fold
                         importance.loc[:,'seed']=i
                         importance.loc[:,'feature']=feature_tag
@@ -513,8 +511,8 @@ class experiments:
                             final_df=y_val_all.reset_index(drop=True).join(predictions_all)
                             final_df_=final_df.sample(n=y_val_all.shape[0],replace=True)
                             
-                            y_val_shufle=final_df_[labels]
-                            y_preds_shufle=final_df_.loc[:,~final_df.columns.isin(labels)]
+                            y_val_shufle=final_df_[self.label_tags]
+                            y_preds_shufle=final_df_.loc[:,~final_df.columns.isin(self.label_tags)]
                             r2_boot=r2_score(y_val_shufle,y_preds_shufle)
                             r2_bootstrap.append(r2_boot)
                         
