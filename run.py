@@ -29,7 +29,8 @@ def main (exp_dict):
         exp=experiments(configs.feature_tags,configs.label_tags,n_folds=5,iterations=configs.iterations,
         stratify=configs.stratify,rf_n_jobs=configs.rf_n_jobs,n_jobs=configs.n_jobs,n_samples=configs.n_samples,
         seed=configs.seed,n_bootstrap=configs.n_bootstrap,random=configs.random,feature_importance=configs.feature_importance,
-        top_n=configs.top_n,multi_feature_eval=configs.multi_feature_eval,individual_features=configs.individual_features) 
+        top_n=configs.top_n,multi_feature_eval=configs.multi_feature_eval,individual_features=configs.individual_features,
+        model=configs.model) 
         
         dfs=[]
         dfs_boot=[]
@@ -52,7 +53,6 @@ def main (exp_dict):
             filter_name=Path(filter).stem
             
             df['filter']=filter_name
-            #df['feature']=features_name.split('_')[0]
             df['audio_type']=features_name.split('_')[1]
             dfs.append(df)  
 
@@ -62,23 +62,23 @@ def main (exp_dict):
                 trait=configs.label_tags[0]
 
             df_out=pd.concat(dfs).reset_index(drop=True)
-            df_out.loc[:,'trait']=trait            
+            df_out.loc[:,'trait']=trait  
+            df_out.loc[:,'model']=configs.model           
             df_out.to_csv(os.path.join(configs.results_path,'results.csv'))
 
             if configs.feature_importance:
                 importance['filter']=filter_name
-                #importance['feature']=features_name
                 df_importance.append(importance)
                 df_importance_out=pd.concat(df_importance)
                 df_importance_out.to_csv(os.path.join(configs.results_path,'results_importance.csv'))
 
             if not configs.n_bootstrap==0: 
                 df_boot['filter']=filter_name
-                #df_boot['feature']=features_name
                 dfs_boot.append(df_boot)
                 dfs_boot_out=pd.concat(dfs_boot).reset_index(drop=True)         
                 
                 dfs_boot_out.loc[:,'trait']=trait
+                dfs_boot_out.loc[:,'model']=configs.model
                 dfs_boot_out.to_csv(os.path.join(configs.results_path,'results_bootstrapping.csv'))
             
 if __name__=='__main__':

@@ -1,4 +1,5 @@
 from pyexpat import features
+from statistics import linear_regression
 import pandas as pd
 import numpy as np
 import tqdm
@@ -6,6 +7,7 @@ import warnings
 import glob
 
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LinearRegression
 from sklearn.utils import resample
 from sklearn.metrics import r2_score
 from sklearn.metrics import mean_squared_error
@@ -324,11 +326,9 @@ def bootstrap_parallel_no_partitions_learning_curve(df,iterations,feature_tags,l
     return final_df
 
     
-def train_model(df_train,feature_tags,label_tags,seed,rf_n_jobs=None,random=False):  
+def train_model(df_train,feature_tags,label_tags,seed,rf_n_jobs=None,random=False,model_selection='random_forest'):  
     
-    X_train,Y_train=split_X_Y(df_train,feature_tags,label_tags)
-    
-    RF_reg=RandomForestRegressor(random_state=seed,n_jobs=rf_n_jobs) 
+    X_train,Y_train=split_X_Y(df_train,feature_tags,label_tags)    
     
     if random:
         Y_train=Y_train.sample(frac=1,replace=True)
@@ -337,6 +337,13 @@ def train_model(df_train,feature_tags,label_tags,seed,rf_n_jobs=None,random=Fals
         Y_train=Y_train.values.reshape((Y_train.shape[0],))
     else:
         Y_train=Y_train.values
+    
+    if model_selection=='random_forest':
+        RF_reg=RandomForestRegressor(random_state=seed,n_jobs=rf_n_jobs) 
+    elif model_selection=='linear_regression':
+        RF_reg=LinearRegression(n_jobs=rf_n_jobs)
+    else:
+        raise ValueError('model_not_found. Select between <random_forest> and <linear_regression>')
 
     RF_reg.fit(X_train.values,Y_train)
  
@@ -429,8 +436,9 @@ def create_individual_dict(dict_in):
 
 class experiments:
 
-    def __init__(self,feature_tags,label_tags,n_folds=5,iterations=10,stratify=False,
-    n_jobs=1,rf_n_jobs=1,n_samples=1,seed=None,n_bootstrap=0,random=False,feature_importance=False,top_n=5,multi_feature_eval=False,individual_features=False):
+    def __init__(self,feature_tags,label_tags,n_folds=5,iterations=10,stratify=False,n_jobs=1,rf_n_jobs=1,n_samples=1,
+    seed=None,n_bootstrap=0,random=False,feature_importance=False,top_n=5,multi_feature_eval=False,
+    individual_features=False,model='random_forest'):
         self.feature_tags=feature_tags
         self.label_tags=label_tags
         self.n_folds=n_folds
@@ -446,6 +454,7 @@ class experiments:
         self.top_n=top_n
         self.multi_feature_eval=multi_feature_eval
         self.individual_features=individual_features
+        self.model=model
     
     def cross_val(self,df): 
 
@@ -493,7 +502,8 @@ class experiments:
                 for fold in tqdm.tqdm(range(self.n_folds),desc='Training on folds'):
                     df_val=df_final[df_final['fold']==float(fold)]
                     df_train=df_final[~df_final['basename'].isin(df_val.basename)]
-                    RF_reg= train_model (df_train,features,self.label_tags,self.seed,rf_n_jobs=self.rf_n_jobs,random=self.random)
+                    
+                    RF_reg= train_model (df_train,features,self.label_tags,self.seed,rf_n_jobs=self.rf_n_jobs,random=self.random,model_selection=self.model)
                             
                     predictions,y_val= predict(RF_reg,df_val,features,self.label_tags)             
                     

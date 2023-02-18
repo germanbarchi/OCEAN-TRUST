@@ -19,7 +19,9 @@ import pandas as pd
 exp_name=os.path.basename(__file__).split('.')[0]
 results_path = os.path.join('results/paper',exp_name)
 
-# Data
+# Model
+
+model='random_forest'
 
 # Labels
 

@@ -19,7 +19,9 @@ import pandas as pd
 exp_name=os.path.basename(__file__).split('.')[0]
 results_path = os.path.join('results/paper',exp_name)
 
-# Data
+# Model
+
+model='random_forest'
 
 # Labels
 
@@ -45,6 +47,9 @@ if speech_ratio:
     feature_df=pd.merge(feature_df,labels_df[['filename','speech_ratio']],left_on='Name',right_on='filename').drop(columns='filename')
 
 feature_tags=['speech_ratio']
+
+multi_feature_eval=False # Computes all combinations between groups and type of features,
+individual_features=False # Will train individual models with 1 features as input
 
 # Subset Lists
 

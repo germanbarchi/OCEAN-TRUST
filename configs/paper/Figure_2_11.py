@@ -3,7 +3,7 @@ Cross-val
 Stratified
 Iterations 100
 Bootstrapping in test partition: 10 iterations
-Features: speech_ratio+
+Features: all speech_ratio+egemaps groups combinations  
 audio_input: 
     * full-audio
     * speech
@@ -19,7 +19,9 @@ import pandas as pd
 exp_name=os.path.basename(__file__).split('.')[0]
 results_path = os.path.join('results/paper',exp_name)
 
-# Data
+# Model
+
+model='random_forest'
 
 # Labels
 
@@ -37,8 +39,6 @@ feature_list=['egemaps_full_audio.csv',
         'egemaps_speech.csv']
 
 features=[os.path.join(data_path,i) for i in feature_list]
-
-multi_feature_eval=True
 
 # feature tag format {<tag>:[<feature_label>]}
 
@@ -147,6 +147,9 @@ feature_tags = {'sr':['speech_ratio'],'frequency' : [
             'MeanVoicedSegmentLengthSec',
             'StddevVoicedSegmentLengthSec'
             ]}
+
+multi_feature_eval=True # Computes all combinations between groups and type of features,
+individual_features=False # Will train individual models with 1 features as input
 
 # Subset Lists
 

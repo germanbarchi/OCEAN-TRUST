@@ -3,8 +3,10 @@ Cross-val
 Stratified
 Iterations 100
 Bootstrapping in test partition: 10 iterations
-Features: egemaps+sr
-
+Features: speech_ratio+
+audio_input: 
+    * full-audio
+    * speech
 Filters: manual annotations no music 
 
 """
@@ -17,39 +19,41 @@ import pandas as pd
 exp_name=os.path.basename(__file__).split('.')[0]
 results_path = os.path.join('results/paper',exp_name)
 
-# Model
-
-model='random_forest'
+# Data
 
 # Labels
 
-labels_path='data/labels/final_labels.csv'
+labels_path='data/labels/final_labels+speech_ratio.csv'
 labels_df=pd.read_csv(labels_path)
 
-label_tags=['neuroticism']
+label_tags=['extraversion', 'neuroticism','agreeableness', 'conscientiousness', 'openness']
 
 random=False
 
 # Features
 
 data_path = 'data/features/paper/egemaps'
-feature_list=['egemaps_speech.csv']
+feature_list=['egemaps_full_audio.csv',
+        'egemaps_speech.csv']
 
 features=[os.path.join(data_path,i) for i in feature_list]
+
+multi_feature_eval=False
+
+# feature tag format {<tag>:[<feature_label>]}
 
 feature_df=pd.read_csv(features[0])
 
 speech_ratio=True
+multi_feature_eval=False
+individual_features=False
 
 if speech_ratio:
     feature_df=pd.merge(feature_df,labels_df[['filename','speech_ratio']],left_on='Name',right_on='filename').drop(columns='filename')
 
-feature_labels=feature_df.columns[~feature_df.columns.isin(['Name','Part','start','end'])]
+features_=feature_df.columns[~feature_df.columns.isin(['Name','Part','start','end'])]
 
-feature_tags={'egemaps+sr':feature_labels}
-
-multi_feature_eval=False # Computes all combinations between groups and type of features,
-individual_features=False # Will train individual models with 1 features as input
+feature_tags={'sr+egemaps':features_,'top_3_non_random':['speech_ratio', 'VoicedSegmentsPerSec','loudnessPeaksPerSec']}
 
 # Subset Lists
 
@@ -60,10 +64,11 @@ lists=[os.path.join(lists_path,j) for j in lists_]
 
 # Data sampling
 
+  
 n_samples=None # number of samples to create subset or 'None' to use all data 
 
 stratify=True
-iterations=100
+iterations=10
 
 # Feature importance 
 
@@ -72,7 +77,7 @@ top_n=10
 
 # Bootstrapping 
 
-n_bootstrap=10
+n_bootstrap=0
 
 # Modeling
 

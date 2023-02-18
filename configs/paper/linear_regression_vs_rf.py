@@ -19,7 +19,11 @@ import pandas as pd
 exp_name=os.path.basename(__file__).split('.')[0]
 results_path = os.path.join('results/paper',exp_name)
 
-# Data
+# Model
+
+#<random_forest> or <linear_regression>
+
+model='linear_regression'
 
 # Labels
 
@@ -37,11 +41,6 @@ feature_list=['egemaps_full_audio.csv',
         'egemaps_speech.csv']
 
 features=[os.path.join(data_path,i) for i in feature_list]
-
-multi_feature_eval=False
-
-# feature tag format {<tag>:[<feature_label>]}
-
 feature_df=pd.read_csv(features[0])
 
 speech_ratio=True
@@ -51,7 +50,12 @@ if speech_ratio:
 
 features_=feature_df.columns[~feature_df.columns.isin(['Name','Part','start','end'])]
 
-feature_tags={'sr+egemaps':features_}
+# feature tag format {<tag>:[<feature_label>]}
+
+feature_tags={'sr+egemaps':features_,'top_3_non_random':['speech_ratio', 'VoicedSegmentsPerSec','loudnessPeaksPerSec']}
+
+multi_feature_eval=False # Computes all combinations between groups and type of features,
+individual_features=False # Will train individual models with 1 features as input
 
 # Subset Lists
 
@@ -75,7 +79,7 @@ top_n=10
 
 # Bootstrapping 
 
-n_bootstrap=0
+n_bootstrap=0 
 
 # Modeling
 

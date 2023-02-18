@@ -3,7 +3,9 @@ Cross-val
 Stratified
 Iterations 100
 Bootstrapping in test partition: 10 iterations
-Features: speech_ratio+
+Features: speech_ratio+'loudness_sma3_percentile20.0',
+       'loudness_sma3_stddevRisingSlope', 'F2frequency_sma3nz_stddevNorm',
+       'F0semitoneFrom27.5Hz_sma3nz_percentile20.0'
 audio_input: 
     * full-audio
     * speech
@@ -19,7 +21,9 @@ import pandas as pd
 exp_name=os.path.basename(__file__).split('.')[0]
 results_path = os.path.join('results/paper',exp_name)
 
-# Data
+# Model
+
+model='random_forest'
 
 # Labels
 
@@ -41,6 +45,9 @@ features=[os.path.join(data_path,i) for i in feature_list]
 feature_tags=['speech_ratio', 'loudness_sma3_percentile20.0',
        'loudness_sma3_stddevRisingSlope', 'F2frequency_sma3nz_stddevNorm',
        'F0semitoneFrom27.5Hz_sma3nz_percentile20.0']
+
+multi_feature_eval=False # Computes all combinations between groups and type of features,
+individual_features=False # Will train individual models with 1 features as input
 
 
 # Subset Lists
