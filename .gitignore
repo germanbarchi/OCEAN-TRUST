@@ -1,5 +1,7 @@
 silero_VAD/
 silero_VAD/timestamps/
+!silero_VAD/sad.py
+!silero_VAD/silero.py
 
 yamnet/models/
 source_separation/
@@ -13,6 +15,7 @@ data/no_speech_audios
 data/manual_music_annotations/audio/ 
 
 yamnet/
+|yamnet/models/research/audioset/yamnet/
 
 results/
 !results/experiments_results.ipynb
