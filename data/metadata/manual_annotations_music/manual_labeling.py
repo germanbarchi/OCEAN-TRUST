@@ -16,12 +16,12 @@ def start(results_path,audio_path):
     audios_list=glob.glob(audio_path+'/*/*.wav')
 
     print('------------------- Start -----------------------')
-    print('* Ingrese 1 para muestras que contienen música \n* Ingrese 0 para muestras que no contienen música\n* Ingrese cualquier tecla para repetir el audio')
+    print('* Press 1 for audio samples containing music \n* Press 0 for audio samples not containing music \n* Press any key to repeat audio')
     print('-------------------------------------------------')
     
     i=1
     input_error=False
-    input('ENTER para comenzar')
+    input('Press ENTER to start')
     for k, audio_sample in enumerate(audios_list):                
         filename=audio_sample.split('/')[-1]                
         
@@ -35,7 +35,7 @@ def start(results_path,audio_path):
             wavfile.write('aux.wav', fs, trimmed_data)
             playsound('aux.wav')
             
-            user_input=input('Ingrese respuesta:')             
+            user_input=input('Enter value:')             
             
             if int(user_input)==1:
                 df_results.loc[k,'music']=1
@@ -46,9 +46,9 @@ def start(results_path,audio_path):
             else:                        
                 input_error=True                    
                 while input_error:
-                    print('Escuche nuevamente e ingrese 0 o 1')                            
+                    print('Listen again and enter value, 0 or 1')                            
                     playsound('aux.wav')
-                    user_input=int(input('Ingrese respuesta:'))   
+                    user_input=int(input('Enter value:'))   
                     if user_input==0:
                         df_results.loc[k,'music']=0
                         df_results.loc[k,'name']=filename

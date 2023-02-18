@@ -28,6 +28,7 @@ strat/strat/first_impressions_parts
 
 data/labels/*
 !data/labels/final_labels.csv
+!data/labels/final_labels+speech_ratio.csv
 !data/labels/create_labels_dict_json.py
 
 
