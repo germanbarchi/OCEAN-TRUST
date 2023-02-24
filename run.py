@@ -67,18 +67,22 @@ def main (exp_dict):
             df_out.to_csv(os.path.join(configs.results_path,'results.csv'))
 
             if configs.feature_importance:
-                importance['filter']=filter_name
+                importance.loc[:,'filter']=filter_name
+                importance.loc[:,'trait']=trait
+                importance.loc[:,'audio_type']=features_name.split('_')[1]
                 df_importance.append(importance)
                 df_importance_out=pd.concat(df_importance)
                 df_importance_out.to_csv(os.path.join(configs.results_path,'results_importance.csv'))
 
             if not configs.n_bootstrap==0: 
                 df_boot['filter']=filter_name
+                df_boot['audio_type']=features_name.split('_')[1]
                 dfs_boot.append(df_boot)
                 dfs_boot_out=pd.concat(dfs_boot).reset_index(drop=True)         
                 
                 dfs_boot_out.loc[:,'trait']=trait
                 dfs_boot_out.loc[:,'model']=configs.model
+                
                 dfs_boot_out.to_csv(os.path.join(configs.results_path,'results_bootstrapping.csv'))
             
 if __name__=='__main__':
