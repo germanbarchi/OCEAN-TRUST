@@ -15,7 +15,7 @@ data/no_speech_audios
 data/manual_music_annotations/audio/ 
 
 yamnet/
-|yamnet/models/research/audioset/yamnet/
+!yamnet/models/research/audioset/yamnet/
 
 results/
 !results/experiments_results.ipynb
