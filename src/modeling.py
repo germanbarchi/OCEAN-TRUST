@@ -476,7 +476,7 @@ class experiments:
             # Partitioning options
 
             if self.stratify: 
-                df_final=partition.make_strat_folds(df_subset) #se puede agregar random_seed
+                df_final=partition.make_strat_folds(df_subset)
             else:
                 df_final=partition.make_folds_by_id(df_subset)
 
@@ -524,21 +524,34 @@ class experiments:
                     
                 if not self.n_bootstrap==0:
                     
-                    r2_bootstrap=[]                 
-                    for n_boot in tqdm.tqdm(range(self.n_bootstrap),desc='Boostrapping'):                                       
-                        
+                    r2_bootstrap=[]
+                    r2_bootstrap_o=[]
+                    r2_bootstrap_c=[]
+                    r2_bootstrap_e=[]
+                    r2_bootstrap_a=[]
+                    r2_bootstrap_n=[]                       
+                    for n_boot in tqdm.tqdm(range(self.n_bootstrap),desc='Boostrapping'):                                     
+                                           
                         final_df=y_val_all.reset_index(drop=True).join(predictions_all)
                         final_df_=final_df.sample(n=y_val_all.shape[0],replace=True)
                         
                         y_val_shufle=final_df_[self.label_tags]
                         y_preds_shufle=final_df_.loc[:,~final_df.columns.isin(self.label_tags)]
                         r2_boot=r2_score(y_val_shufle,y_preds_shufle)
+                        r2_indiv_scores=r2_score(y_val_shufle,y_preds_shufle,multioutput='raw_values')
+                        r2_bootstrap_e.append(r2_indiv_scores[0])
+                        r2_bootstrap_n.append(r2_indiv_scores[1])
+                        r2_bootstrap_a.append(r2_indiv_scores[2])
+                        r2_bootstrap_c.append(r2_indiv_scores[3])
+                        r2_bootstrap_o.append(r2_indiv_scores[4])
                         r2_bootstrap.append(r2_boot)
                     
-                    df_boot=pd.DataFrame({'r2_boot_values':r2_bootstrap,'n_boot':list(np.arange(self.n_bootstrap))})
+                    df_boot=pd.DataFrame({'r2_boot_values':r2_bootstrap,'openness':r2_bootstrap_o,'conscientiousness':r2_bootstrap_c,
+                    'extraversion':r2_bootstrap_e,'agreeableness':r2_bootstrap_a,'neuroticism':r2_bootstrap_n,
+                    'n_boot':list(np.arange(self.n_bootstrap)),'feature':feature_tag})
                     df_boot.loc[:,'seed']=i
-                    df_boot.loc[:,'feature']=feature_tag
-                    df_bootstrapping=pd.concat([df_bootstrapping,df_boot])
+                    df_boot.loc[:,'fold']=fold
+                    df_bootstrapping=pd.concat([df_bootstrapping,df_boot])    
 
                 r2_fold=r2_score(y_val_all, predictions_all)
                 metrics_list=np.transpose(metrics_list)

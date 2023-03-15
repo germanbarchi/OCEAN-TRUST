@@ -10,7 +10,7 @@ from src.modeling import experiments
 
 from IPython import embed
 
-sys.path.append('./configs/paper')
+sys.path.append('./configs/paper_v_final')
 
 def bool_eval(flag):
     if flag=='True':
@@ -54,6 +54,7 @@ def main (exp_dict):
             
             df['filter']=filter_name
             df['audio_type']=features_name.split('_')[1]
+            df['feature_list']=feat
             dfs.append(df)  
 
             if len(configs.label_tags)==5:
@@ -92,7 +93,7 @@ if __name__=='__main__':
     args=vars(argparser.parse_args())
     
     if bool_eval(args['multiple']):
-        config_file='experiments.JSON'
+        config_file='run_experiments.JSON'
     else:
         config_file='individual_experiment.JSON'
         

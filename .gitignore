@@ -20,6 +20,7 @@ yamnet/
 results/
 !results/experiments_results.ipynb
 !results/paper_figures.ipynb
+!results/paper_results/
 
 voxseg/
 
@@ -42,4 +43,6 @@ data/features/paper/wav2vec/
 data/features/paper/wav2vec_features/
 
 figures/
+
+Trust-UBA-V2
 
