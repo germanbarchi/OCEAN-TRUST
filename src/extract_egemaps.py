@@ -77,7 +77,8 @@ def check_data(features_path,blacklist_dir):
 def extract_features(file_path,features_path,duration=0,random_sampling=False,normalize=False,norm_method='p95',speech_ratio_option=False,ommit_samples=[],blacklist=''):
     
     FS=16000  
-    
+    print(file_path)
+
     name=file_path.split('/')[-1]
     
     if (not name in blacklist) and (not name in ommit_samples):
@@ -103,7 +104,7 @@ def extract_features(file_path,features_path,duration=0,random_sampling=False,no
                 start=0
                 end=n_samples-1
 
-            if len(signal)>(duration):
+            if (len(signal)>(duration)):
                 functionals=smile(signal[start:end],FS)
             else: 
                 functionals=pd.DataFrame()
@@ -115,7 +116,7 @@ def extract_features(file_path,features_path,duration=0,random_sampling=False,no
         if not functionals.empty:    
             functionals['Part']=partition
             functionals['Name']=file_tag 
-            
+            functionals['path']=file_path
             if speech_ratio_option:
                 speech_ratio= silero.silero_timestamps(file_path,start,end,0.5)[4]
                 functionals['speech_ratio']=speech_ratio
@@ -130,6 +131,7 @@ if __name__ == '__main__':
     argparser=argparse.ArgumentParser(description='Extract egemaps from dir')
     argparser.add_argument('features_path',help='Path to save features')
     argparser.add_argument('--files_path',help='Files directory')
+    argparser.add_argument('--paths_list',help='List of files')
     argparser.add_argument('--duration',help='Audio duration (seconds). Audio will be trimmed at t=duration)',default=0)
     argparser.add_argument('--random_sampling',help='extract random audio fragments of length <duration>',default=False)
     argparser.add_argument('--normalize',help='If True, normalization will be applied. Default method is percentile 95',default=False)
@@ -139,7 +141,11 @@ if __name__ == '__main__':
     argparser.add_argument('--n_jobs',help='multiplocessing threads',default=1)
     args=vars(argparser.parse_args())
 
-    files_path_=glob.glob(os.path.join(args['files_path'],'*/*.wav'))
+    if args['files_path']:       
+        files_path_=glob.glob(os.path.join(args['files_path'],'*/*.wav'))
+    elif args['paths_list']:
+        with open (args['paths_list'],'r') as file:
+            files_path_=file.read().splitlines()
 
     df,ommit,b_list=check_data(args['features_path'],blacklist_dir=args['blacklist'])    
 
