@@ -1,4 +1,4 @@
-from pyexpat import features
+import pdb
 import pandas as pd
 import numpy as np
 import tqdm
@@ -173,7 +173,7 @@ def bootstrap_parallel_music_analysis(df,iterations,n_train,feature_tags,label_t
     df=pd.DataFrame({'r2':metrics_list[0],'r':metrics_list[1],'MAE':metrics_list[2],'MSE':metrics_list[3],'RMSE':metrics_list[4]})
     df['iteration']=df.index
 
-    return df
+    return df 
 
 def bootstrap_parallel_music_analysis_replacement(df,iterations,n_train,n_val,feature_tags,label_tags,seed,n_jobs=1,rf_n_jobs=None):   
     
@@ -327,8 +327,8 @@ def bootstrap_parallel_no_partitions_learning_curve(df,iterations,feature_tags,l
     
 def train_model(df_train,feature_tags,label_tags,seed,rf_n_jobs=None,random=False,model_selection='random_forest'):  
     
-    X_train,Y_train=split_X_Y(df_train,feature_tags,label_tags)    
-    
+    X_train,Y_train=split_X_Y(df_train,feature_tags,label_tags)
+
     if random:
         Y_train=Y_train.sample(frac=1,replace=True)
 
@@ -478,8 +478,10 @@ class experiments:
             if self.stratify: 
                 df_final=partition.make_strat_folds(df_subset)
             else:
-                df_final=partition.make_folds_by_id(df_subset)
+                df_final=partition.make_random_folds(df_subset)
 
+                #df_final=partition.make_folds_by_id(df_subset)
+            
             # Evaluate in multiple feature combinations
 
             if self.individual_features:
@@ -500,8 +502,9 @@ class experiments:
                 
                 for fold in tqdm.tqdm(range(self.n_folds),desc='Training on folds'):
                     df_val=df_final[df_final['fold']==float(fold)]
-                    df_train=df_final[~df_final['basename'].isin(df_val.basename)]
-                    
+                    #df_train=df_final[~df_final['basename'].isin(df_val.basename)] used in first impressions
+                    df_train=df_final[df_final['fold']!=float(fold)]
+
                     RF_reg= train_model (df_train,features,self.label_tags,self.seed,rf_n_jobs=self.rf_n_jobs,random=self.random,model_selection=self.model)
                             
                     predictions,y_val= predict(RF_reg,df_val,features,self.label_tags)             

@@ -10,7 +10,7 @@ from src.modeling import experiments
 
 from IPython import embed
 
-sys.path.append('./configs/paper_v_final')
+sys.path.append('./configs/Trust-V2')
 
 def bool_eval(flag):
     if flag=='True':
@@ -42,17 +42,17 @@ def main (exp_dict):
                 os.makedirs(configs.results_path)
 
             feat_df=pd.read_csv(feat)        
-        
-            df=format_data(feat_df,configs.labels_df,filter)
             
+            df=format_data(feat_df,configs.labels_df,filter)
+
             #df=normalize_data(df,feature_tags)
 
             df,df_boot,importance=exp.__getattribute__(method)(df)
             
             features_name=Path(feat).stem
-            filter_name=Path(filter).stem
+            #filter_name=Path(filter).stem used in first impressions
             
-            df['filter']=filter_name
+            #df['filter']=filter_name used in first impressions
             df['audio_type']=features_name.split('_')[1]
             df['feature_list']=feat
             dfs.append(df)  
@@ -68,7 +68,7 @@ def main (exp_dict):
             df_out.to_csv(os.path.join(configs.results_path,'results.csv'))
 
             if configs.feature_importance:
-                importance.loc[:,'filter']=filter_name
+                #importance.loc[:,'filter']=filter_name used in first impressions
                 importance.loc[:,'trait']=trait
                 importance.loc[:,'audio_type']=features_name.split('_')[1]
                 df_importance.append(importance)
@@ -76,7 +76,7 @@ def main (exp_dict):
                 df_importance_out.to_csv(os.path.join(configs.results_path,'results_importance.csv'))
 
             if not configs.n_bootstrap==0: 
-                df_boot['filter']=filter_name
+                #df_boot['filter']=filter_name used in first impressions
                 df_boot['audio_type']=features_name.split('_')[1]
                 dfs_boot.append(df_boot)
                 dfs_boot_out=pd.concat(dfs_boot).reset_index(drop=True)         

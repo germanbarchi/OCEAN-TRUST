@@ -8,10 +8,12 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 def concat_df(DF_features,DF_labels):
-
+    
     # Concat features and label dataframes
 
-    DF=pd.merge(DF_features,DF_labels,left_on='Name',right_on='filename').drop(columns='filename')
+    #DF=pd.merge(DF_features,DF_labels,left_on='Name',right_on='filename').drop(columns='filename') # used in first impressions
+
+    DF=pd.merge(DF_features,DF_labels, on='subject')
 
     if 'Part' in DF.columns:
         DF=DF.drop(columns='Part')
@@ -20,11 +22,14 @@ def concat_df(DF_features,DF_labels):
 
 def filter_df(DF,filter_list):
     
-    with open (filter_list,'r') as file:
-        list=file.read().splitlines()
-    
-    filtered_df=DF[DF['Name'].isin(list)] 
-
+    if filter_list:
+        with open (filter_list,'r') as file:
+            list=file.read().splitlines()
+        
+        filtered_df=DF[DF['Name'].isin(list)] 
+    else:
+        filtered_df=DF
+        
     return filtered_df
 
 def format_data(df_features, df_labels, filter_list=None):
@@ -72,6 +77,20 @@ class make_partitions:
     def __init__(self,n_folds):
         self.n_folds=n_folds
 
+    def make_random_folds(self,df):
+        n_folds=self.n_folds
+        len=df.shape[0]
+        final_df=pd.DataFrame()
+        for i in range (n_folds-1):
+            partition=df.sample(int(len*(1/n_folds)),replace=False)
+            partition['fold']=i
+            final_df=pd.concat([final_df,partition])
+            df=df[~df['subject'].isin(partition.subject.unique())] 
+        df['fold']=(i+1)
+        final_df=pd.concat([final_df,df])
+
+        return final_df
+
     def make_folds_by_id(self,df):
         
         df_out=pd.DataFrame()
@@ -96,7 +115,7 @@ class make_partitions:
             df_out=pd.concat([df_out,df_rest])
         
         return df_out
-
+    
     def make_strat_folds(self,df,random_seed=None):
 
         df_=pd.DataFrame()        
